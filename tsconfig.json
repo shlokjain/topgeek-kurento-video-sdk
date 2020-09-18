@@ -1,0 +1,38 @@
+{
+  "include": ["src", "types", "test"],
+  "compilerOptions": {
+    "importHelpers": true,
+    "declaration": true,
+    "baseUrl": "./",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "outDir": "./dist",
+    "module": "es6",
+    "target": "es6",
+    "lib": ["es6", "dom", "es2017", "es2018.promise"],
+    "sourceMap": true,
+    "allowJs": true,
+    "jsx": "react",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "rootDir": "src",
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "alwaysStrict": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "noUnusedLocals": false,
+    "skipLibCheck": true,
+    "allowUnreachableCode": true,
+    "resolveJsonModule": true,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "*": ["src/*", "node_modules/*"]
+    }
+  },
+  "exclude": ["node_modules/*"]
+}
