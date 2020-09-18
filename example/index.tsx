@@ -15,7 +15,7 @@ class App extends React.Component<any, any> {
 
     VideoSDK.connect('token', {
       url: 'https://localhost:3000/',
-      name: Math.floor(Math.random() * 1) == 0 ? 'suraj' : 'ahmed',
+      name: `Suraj` + Math.floor(Math.random() * 10),
       roomName: 'new',
     })
       .then((room: any) => {
@@ -63,10 +63,8 @@ class App extends React.Component<any, any> {
 
           document.getElementById('participants').appendChild(container);
 
-          var container2 = document.createElement('div');
-          container2.appendChild(video.cloneNode(true));
           //@ts-ignore
-          document.getElementById('participants').appendChild(container2);
+          // document.getElementById('participants').appendChild(container2);
         });
 
         room.on('participantDisconnected', participant => {
