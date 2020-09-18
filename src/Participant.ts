@@ -5,6 +5,7 @@ export default class Participant extends Model {
   rtcPeer: any;
 
   track: any;
+  screen: any;
   constructor(name: string) {
     super();
     this.name = name;
@@ -17,6 +18,13 @@ export default class Participant extends Model {
     this.track.controls = false;
     const mediaStream = new MediaStream();
     this.track.srcObject = mediaStream;
+
+    this.screen = document.createElement('video');
+    this.screen.id = 'screen-' + name;
+    this.screen.autoplay = true;
+    this.screen.controls = false;
+    this.screen.srcObject = null;
+    // this.screen.srcObject = new MediaStream();
   }
 
   dispose() {
@@ -25,5 +33,9 @@ export default class Participant extends Model {
 
   getVideoElement() {
     return this.track;
+  }
+
+  getScreenElement() {
+    return this.screen;
   }
 }

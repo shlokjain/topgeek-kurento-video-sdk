@@ -2,15 +2,21 @@ import Room from './Room';
 import socketIOClient from 'socket.io-client';
 import kurentoUtils from 'kurento-utils';
 import Participant from './Participant';
-const ENDPOINT = 'https://localhost:3000/';
 
 var socket: any;
 class Video {
   socket: any;
   room: Room;
+  screenShare: any;
+  currentParticipantName: string;
 
   constructor() {
     //
+    this.screenShare = document.createElement('video');
+    this.screenShare.id = 'screenShare';
+    this.screenShare.autoplay = true;
+    this.screenShare.controls = false;
+    this.screenShare.srcObject = null;
   }
   sendMessage = (message: any) => {
     socket.emit('message', message);
@@ -24,7 +30,8 @@ class Video {
       roomName: string;
     }
   ) {
-    socket = socketIOClient(ENDPOINT);
+    this.currentParticipantName = config.name;
+    socket = socketIOClient(config.url);
 
     socket.on('event', function(data: any) {
       console.log('connected on event', data);
@@ -47,9 +54,9 @@ class Video {
 
           this.onNewParticipant(parsedMessage);
           break;
-        // case "screenShare":
-        //   onScreenShare(parsedMessage);
-        //   break;
+        case 'screenShare':
+          this.onScreenShare(parsedMessage);
+          break;
         case 'participantLeft':
           this.onParticipantLeft(parsedMessage);
           break;
@@ -94,52 +101,47 @@ class Video {
     });
   }
 
-  // function onScreenShare(msg) {
-  //   let constraints = {
-  //     video: {
-  //       mandatory: {
-  //         maxWidth: 320,
-  //         maxFrameRate: 15,
-  //         minFrameRate: msg.existingParticipants,
-  //       },
-  //     },
-  //     audio: false,
-  //   };
+  onScreenShare = (request: any) => {
+    console.log('hello ehre');
+    // var localParticipant = this.room.participants.get(request.name);
 
-  //   var localParticipant = participants[msg.name];
-  //   // participants[msg.name] = localParticipant;
-  //   let video_el = document.getElementById('share-screen-video');
+    // if (localParticipant) {
+    //   let video = localParticipant.getScreenElement();
+    //   var options = {
+    //     remoteVideo: video,
+    //     // videoStream: video.srcObject,
+    //     // mediaConstraints: constraints,
+    //     onicecandidate: this.onIceCandidate.bind(
+    //       localParticipant,
+    //       localParticipant
+    //     ),
+    //   };
 
-  //   var video = video_el;
-  //   var options = {
-  //     remoteVideo: video,
-  //     // videoStream: video_el.srcObject,
-  //     // mediaConstraints: constraints,
-  //     onicecandidate: localParticipant.onIceCandidate.bind(localParticipant),
-  //   };
+    //   //@ts-ignore
+    //   localParticipant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
+    //     options,
+    //     error => {
+    //       if (error) {
+    //         return console.error(error);
+    //       }
+    //       // Set localVideo to new object if on IE/Safari
+    //       // localVideo = document.getElementById("local_video");
+    //       // // initial main video to local first
+    //       // localVideoCurrentId = sender;
+    //       // //localVideo.src = localParticipant.rtcPeer.localVideo.src;
+    //       // localVideo.muted = true;
+    //       // console.log("local participant id : " + sender);
+    //       if (localParticipant)
+    //         localParticipant.rtcPeer.generateOffer(
+    //           this.offerToReceiveVideo.bind(localParticipant, localParticipant)
+    //         );
+    //     }
+    //   );
+    // }
 
-  //   localParticipant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
-  //     options,
-  //     function(error) {
-  //       if (error) {
-  //         return console.error(error);
-  //       }
-  //       // Set localVideo to new object if on IE/Safari
-  //       // localVideo = document.getElementById("local_video");
-  //       // // initial main video to local first
-  //       // localVideoCurrentId = sender;
-  //       // //localVideo.src = localParticipant.rtcPeer.localVideo.src;
-  //       // localVideo.muted = true;
-  //       // console.log("local participant id : " + sender);
-  //       this.generateOffer(
-  //         localParticipant.offerToReceiveVideo.bind(localParticipant)
-  //       );
-  //     }
-  //   );
-
-  //   console.log();
-  //   // msg.data.forEach(receiveVideo);
-  // }
+    console.log();
+    // request.data.forEach(receiveVideo);
+  };
 
   offerToReceiveVideo(participant: any, error: any, offerSdp: any, wp: any) {
     if (error) return console.error('sdp offer error');
@@ -172,10 +174,13 @@ class Video {
   }
 
   onNewParticipant(request: any) {
+    console.log('request name new', request.name);
+
     this.receiveVideo(request.name);
   }
 
   onExistingParticipants(request: any) {
+    console.log('request name', request.name);
     var constraints = {
       audio: true,
       video: {
@@ -191,13 +196,19 @@ class Video {
       var participant = new Participant(name);
       this.room.connectParticipant(participant);
       var video = participant.getVideoElement();
-      // let video_el = document.getElementById('share-screen-video');
+
+      // var videoScreen = participant.getScreenElement();
+      let video_el = this.screenShare; //
+      // docume/nt.getElementById('share-screen-video');
+
+      var video = participant.getVideoElement();
       var options = {
         localVideo: video,
-        // videoStream: video_el.srcObject,
+        videoStream: video_el.srcObject,
         mediaConstraints: constraints,
         onicecandidate: this.onIceCandidate.bind(participant, participant),
       };
+
       //@ts-ignore
       participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
         options,
@@ -229,11 +240,11 @@ class Video {
   };
 
   shareScreen() {
-    // console.log('hello here');
-    // // var audioConstraints = {
-    // //   audio: false,
-    // //   video: true,
-    // // };
+    console.log('hello here');
+    // var audioConstraints = {
+    //   audio: false,
+    //   video: true,
+    // };
     // var audioConstraints = {
     //   audio: false,
     //   video: {
@@ -249,32 +260,33 @@ class Video {
     //     ],
     //   },
     // };
-    // let displayMediaOptions = { video: true, audio: false };
-    // navigator.mediaDevices
-    //   .getDisplayMedia(displayMediaOptions)
-    //   .then(function(stream) {
-    //     let video_el = document.getElementById('share-screen-video');
-    //     // video_el.style.display = "block";
-    //     video_el.srcObject = stream;
-    //     const sender = 'screen';
-    //     var constraints = {
-    //       audio: true,
-    //       video: {
-    //         mandatory: {
-    //           maxWidth: 320,
-    //           maxFrameRate: 15,
-    //         },
-    //       },
-    //     };
-    //     var message = {
-    //       id: 'screenShare',
-    //       name: sender,
-    //       username: name,
-    //       roomName: roomName,
-    //       // srcObject: stream,
-    //     };
-    //     this.sendMessage(message);
-    //   });
+    let displayMediaOptions = { video: true, audio: false };
+
+    //@ts-ignore
+    // navigator.mediaDevices.getUserMedia
+    navigator.mediaDevices
+      .getDisplayMedia(displayMediaOptions)
+      .then((stream: any) => {
+        const participant = this.room.participants.get(
+          this.currentParticipantName
+        );
+        if (participant) {
+          let video_el = this.screenShare; //document.getElementById('share-screen-video');
+          video_el.srcObject = stream;
+
+          var message = {
+            id: 'screenShare',
+            name: this.currentParticipantName,
+            roomName: this.room.name,
+          };
+
+          socket.emit('message', message);
+        }
+        // let video_el = document.getElementById('share-screen-video');
+      })
+      .catch(Error => {
+        console.log(Error);
+      });
   }
 
   receiveVideo = (name: any) => {
@@ -283,6 +295,10 @@ class Video {
 
     if (this.room) {
       var video = participant.getVideoElement();
+
+      // if (name.startsWith('Screen-')) {
+      //   video = participant.getScreenElement();
+      // }
       var options = {
         remoteVideo: video,
         onicecandidate: this.onIceCandidate.bind(participant, participant),

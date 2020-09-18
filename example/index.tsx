@@ -14,7 +14,8 @@ class App extends React.Component<any, any> {
     console.log(VideoSDK);
 
     VideoSDK.connect('token', {
-      name: Math.floor(Math.random() * 2) == 0 ? 'suraj' : 'ahmed',
+      url: 'https://localhost:3000/',
+      name: Math.floor(Math.random() * 1) == 0 ? 'suraj' : 'ahmed',
       roomName: 'new',
     })
       .then((room: any) => {
@@ -39,7 +40,24 @@ class App extends React.Component<any, any> {
           container.appendChild(span);
 
           //@ts-ignore
+
           var video = participantConnected.getVideoElement();
+
+          // if (name.startsWith('Screen-')) {
+          //   video = participantConnected.getScreenElement();
+          // }
+
+          video.style.width = '300px';
+
+          // if (participantConnected.name.startsWith('Screen-')) {
+          //   console.log('hello here', participantConnected.name);
+          //   video = participantConnected.getScreenElement();
+          // }
+
+          // if (participantConnected.name === )
+          // video.style.transform = 'rotateY(180deg)';
+          // video.style['-webkit-transform'] = 'rotateY(180deg)';
+
           container.appendChild(video);
           //@ts-ignore
 
@@ -72,7 +90,6 @@ class App extends React.Component<any, any> {
   render() {
     return (
       <div>
-        <div id="participants" />
         <button
           onClick={() => {
             console.log(VideoSDK, 'participants here');
@@ -81,6 +98,24 @@ class App extends React.Component<any, any> {
         >
           Leave room
         </button>
+
+        <button
+          onClick={() => {
+            console.log(VideoSDK, 'participants here');
+            VideoSDK.shareScreen();
+          }}
+        >
+          Share Screen
+        </button>
+        <div id="participants" />
+        <video
+          id="share-screen-video"
+          style={{
+            display: 'none',
+          }}
+          autoplay="autoplay"
+          width="400"
+        ></video>
       </div>
     );
   }
