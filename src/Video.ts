@@ -264,10 +264,9 @@ class Video {
     // };
     let displayMediaOptions = { video: true, audio: false };
 
-    //@ts-ignore
     // navigator.mediaDevices.getUserMedia
-    navigator.mediaDevices
-      .getDisplayMedia(displayMediaOptions)
+
+    navigator.mediaDevices['getDisplayMedia'](displayMediaOptions)
       .then((stream: any) => {
         const participant = this.room.participants.get(
           this.currentParticipantName
@@ -286,8 +285,8 @@ class Video {
         }
         // let video_el = document.getElementById('share-screen-video');
       })
-      .catch(Error => {
-        console.log(Error);
+      .catch((error: any) => {
+        console.log(error);
       });
   }
 
