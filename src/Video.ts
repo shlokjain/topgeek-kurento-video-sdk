@@ -3,9 +3,8 @@ import socketIOClient from 'socket.io-client';
 import kurentoUtils from 'kurento-utils';
 import Participant from './Participant';
 const END_POINT = 'https://localhost:3000/';
-var socket = socketIOClient(END_POINT);
 
-// var socket: any;
+var socket: any;
 
 class Video {
   socket: any;
@@ -33,6 +32,8 @@ class Video {
       roomName: string;
     }
   ) {
+    socket = socketIOClient(config.url);
+
     this.currentParticipantName = config.name;
 
     socket.on('event', function(data: any) {
