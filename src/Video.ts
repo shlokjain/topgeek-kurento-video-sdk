@@ -2,7 +2,6 @@ import Room from './Room';
 import socketIOClient from 'socket.io-client';
 import kurentoUtils from 'kurento-utils';
 import Participant from './Participant';
-const END_POINT = 'https://localhost:3000/';
 
 var socket: any;
 
@@ -57,15 +56,17 @@ class Video {
 
           this.onNewParticipant(parsedMessage);
           break;
-        case 'screenShare':
-          this.onScreenShare(parsedMessage);
-          break;
+
         case 'participantLeft':
           this.onParticipantLeft(parsedMessage);
           break;
 
         case 'receiveVideoAnswer':
           this.receiveVideoResponse(parsedMessage);
+          break;
+        case 'reply':
+          this.room.emit('speak', parsedMessage);
+          console.log(parsedMessage, 'reply on event');
           break;
         case 'iceCandidate':
           // console.log('zzzzzzz');
@@ -103,48 +104,6 @@ class Video {
       });
     });
   }
-
-  onScreenShare = (request: any) => {
-    console.log('hello ehre');
-    // var localParticipant = this.room.participants.get(request.name);
-
-    // if (localParticipant) {
-    //   let video = localParticipant.getScreenElement();
-    //   var options = {
-    //     remoteVideo: video,
-    //     // videoStream: video.srcObject,
-    //     // mediaConstraints: constraints,
-    //     onicecandidate: this.onIceCandidate.bind(
-    //       localParticipant,
-    //       localParticipant
-    //     ),
-    //   };
-
-    //   //@ts-ignore
-    //   localParticipant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
-    //     options,
-    //     error => {
-    //       if (error) {
-    //         return console.error(error);
-    //       }
-    //       // Set localVideo to new object if on IE/Safari
-    //       // localVideo = document.getElementById("local_video");
-    //       // // initial main video to local first
-    //       // localVideoCurrentId = sender;
-    //       // //localVideo.src = localParticipant.rtcPeer.localVideo.src;
-    //       // localVideo.muted = true;
-    //       // console.log("local participant id : " + sender);
-    //       if (localParticipant)
-    //         localParticipant.rtcPeer.generateOffer(
-    //           this.offerToReceiveVideo.bind(localParticipant, localParticipant)
-    //         );
-    //     }
-    //   );
-    // }
-
-    console.log();
-    // request.data.forEach(receiveVideo);
-  };
 
   offerToReceiveVideo(participant: any, error: any, offerSdp: any, wp: any) {
     if (error) return console.error('sdp offer error');
@@ -229,6 +188,125 @@ class Video {
 
     // }
   }
+
+  onPlayOffer = (error: any, offer: any) => {
+    console.log('playe ere');
+    if (error) {
+      console.log(error, 'error here');
+      return;
+    }
+
+    if (error) return console.error('sdp offer error');
+    var msg = {
+      id: 'onPlay',
+      sender: 'player',
+      sdpOffer: offer,
+    };
+    socket.emit('message', msg);
+
+    // kurentoClient(args.ws_uri, function(error, client) {
+    //   if (error) {
+    //     console.log(error, 'error here');
+    //     return;
+    //   }
+
+    //   client.create('MediaPipeline', function(error, pipeline) {
+    //     if (error) {
+    //       console.log(error, 'error here');
+    //       return;
+    //     }
+
+    //     pipeline.create('WebRtcEndpoint', function(error, webRtc) {
+    //       if (error) {
+    //         console.log(error, 'error here');
+    //         return;
+    //       }
+
+    //       setIceCandidateCallbacks(webRtcPeer, webRtc, onError);
+
+    //       webRtc.processOffer(offer, function(error, answer) {
+    //         if (error) return onError(error);
+
+    //         webRtc.gatherCandidates(onError);
+
+    //         webRtcPeer.processAnswer(answer);
+    //       });
+
+    //       var options = { uri: args.file_uri };
+
+    //       pipeline.create('PlayerEndpoint', options, function(error, player) {
+    //         if (error) return onError(error);
+
+    //         player.on('EndOfStream', function(event) {
+    //           pipeline.release();
+    //           videoPlayer.src = '';
+
+    //           hideSpinner(videoPlayer);
+    //         });
+
+    //         player.connect(webRtc, function(error) {
+    //           if (error) return onError(error);
+
+    //           player.play(function(error) {
+    //             if (error) return onError(error);
+    //             console.log('Playing ...');
+    //           });
+    //         });
+
+    //         // document
+    //         //   .getElementById('stop')
+    //         //   .addEventListener('click', function(event) {
+    //         //     pipeline.release();
+    //         //     webRtcPeer.dispose();
+    //         //     videoPlayer.src = '';
+
+    //         //     hideSpinner(videoPlayer);
+    //         //   });
+    //       });
+    //     });
+    //   });
+    // });
+  };
+
+  startPlaying = () => {
+    console.log('Start playing');
+
+    var message = {
+      id: 'onPlay',
+      name: 'Player-1',
+      roomName: this.room.name,
+    };
+
+    socket.emit('message', message);
+
+    return;
+
+    var videoPlayer = document.getElementById('videoOutput');
+    var options = {
+      remoteVideo: videoPlayer,
+    };
+
+    // if (args.ice_servers) {
+    //   console.log("Use ICE servers: " + args.ice_servers);
+    //   options.configuration = {
+    //     iceServers: JSON.parse(args.ice_servers),
+    //   };
+    // } else {
+    //   console.log("Use freeice");
+    // }
+
+    var webRtcPeer = kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
+      options,
+      error => {
+        if (error) {
+          console.log('Error here: ', error);
+          return;
+        }
+
+        webRtcPeer.generateOffer(this.onPlayOffer);
+      }
+    );
+  };
 
   leaveRoom = () => {
     this.sendMessage({

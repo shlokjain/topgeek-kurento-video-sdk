@@ -13,7 +13,6 @@ export default class Participant extends Model {
 
     console.log(name, 'name here');
     this.track = document.createElement('video');
-    this.track.id = 'video-' + name;
     this.track.autoplay = true;
     this.track.controls = false;
     const mediaStream = new MediaStream();

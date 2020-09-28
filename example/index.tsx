@@ -2,9 +2,8 @@ import 'react-app-polyfill/ie11';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { data, Video } from '../src';
-import { forEach } from 'lodash';
+import { forEach, result } from 'lodash';
 
-import { ScatterGL } from 'scatter-gl';
 import { TRIANGULATION } from './triangulation';
 // const App = () => {
 //   return <div>{data}</div>;
@@ -14,18 +13,170 @@ require('./index.css');
 
 const facemesh = require('@tensorflow-models/facemesh');
 require('@tensorflow/tfjs-backend-webgl');
-console.log(ScatterGL);
 
 const VideoSDK = new Video();
 window['video'] = VideoSDK;
 class App extends React.Component<any, any> {
-  scatterGLHasInitialized: boolean = false;
   model: any;
-  scatterGL: ScatterGL;
+  synth: any;
   videoWidth: string;
   videoHeight: string;
   ctx: any;
   canvas: any;
+  recognition: any;
+
+  constructor(props: any) {
+    super(props);
+
+    this.state = {
+      caption: '',
+    };
+    this.recognition = new webkitSpeechRecognition();
+
+    this.recognition.continuous = true;
+    this.recognition.interimResults = true;
+
+    this.recognition.onresult = event => {
+      if (event.results.length > 0) {
+        console.log(event.results, 'speech ::: result here');
+        let subtitle = '';
+        const value = event.results[event.results.length - 1];
+        subtitle += ' ' + value[0].transcript;
+
+        if (value.isFinal) {
+          // console.log(value, 'speech ::: caption here');
+          VideoSDK.sendMessage({
+            query: subtitle,
+            id: 'query',
+          });
+        }
+
+        this.setState({
+          caption: subtitle,
+        });
+      }
+    };
+    // this.recognition.onresult = function(event) {
+    //   console.log(event.results, 'result here');
+    // };
+    this.recognition.onerror = function(event) {
+      console.log(event, 'speech ::: onerror here');
+    };
+    this.recognition.onend = function() {
+      this.recognition.start();
+      console.log('speech ::: end here');
+    };
+
+    //
+
+    //
+    //
+    ///
+
+    this.synth = speechSynthesis;
+
+    // Element initialization section
+
+    const voice_select = document.getElementById('voice-select');
+
+    // Retrieving the different voices and putting them as
+    // options in our speech selection section
+    let voices = [];
+    // const getVoice = () => {
+    //   // This method retrieves voices and is asynchronously loaded
+    //   voices = synth.getVoices();
+    //   var option_string = '';
+    //   voices.forEach(value => {
+    //     var option = value.name + ' (' + value.lang + ') ';
+    //     var newOption =
+    //       "<option data-name='" +
+    //       value.name +
+    //       "' data-lang='" +
+    //       value.lang +
+    //       "'>" +
+    //       option +
+    //       '</option>\n';
+    //     option_string += newOption;
+    //   });
+
+    //   voice_select.innerHTML = option_string;
+    // };
+
+    // Since synth.getVoices() is loaded asynchronously, this
+    // event gets fired when the return object of that
+    // function has changed
+
+    console.log(this.synth, 'hello 123123');
+    this.synth.onvoiceschanged = function() {
+      // getVoice();
+    };
+  }
+
+  speak = (text?: string) => {
+    //
+
+    // const form = document.querySelector('form');
+    const textarea = document.getElementById('maintext');
+    // const rate = document.getElementById('rate');
+    // const pitch = document.getElementById('pitch');
+    // const rateval = document.getElementById('rate-value');
+    // const pitchval = document.getElementById('pitch-value');
+
+    // console.log(textarea, textarea.innerHTML, 'helllo here');
+    if (!textarea) {
+      return;
+    }
+
+    const text = text ? text : textarea.value;
+
+    console.log(textarea.innerHTML);
+    // If the speech mode is on we dont want to load
+    // another speech
+    if (this.synth.speaking) {
+      alert('Already speaking....');
+      return;
+    }
+
+    // If the text area is not empty that is if the input
+    // is not empty
+    if (text !== '') {
+      // Creating an object of SpeechSynthesisUtterance with
+      // the input value that represents a speech request
+      const speakText = new SpeechSynthesisUtterance(text);
+
+      // When the speaking is ended this method is fired
+      speakText.onend = e => {
+        console.log('Speaking is done!');
+      };
+
+      // When any error occurs this method is fired
+      speakText.error = e => {
+        console.error('Error occured...');
+      };
+
+      // Selecting the voice for the speech from the selection DOM
+      // const id = voice_select.selectedIndex;
+      // const selectedVoice = voice_select.selectedOptions[0].getAttribute(
+      //   'data-name'
+      // );
+
+      // // Checking which voices has been chosen from the selection
+      // // and setting the voice to the chosen voice
+      // voices.forEach(voice => {
+      //   if (voice.name === selectedVoice) {
+      //     speakText.voice = voice;
+      //   }
+      // });
+
+      // Setting the rate and pitch of the voice
+      // speakText.rate = 0.5;
+      // speakText.pitch = 0.5;
+
+      // Finally calling the speech function that enables speech
+      this.synth.speak(speakText);
+    }
+  };
+
   drawPath(ctx, points, closePath) {
     const region = new Path2D();
     region.moveTo(points[0][0], points[0][1]);
@@ -82,27 +233,6 @@ class App extends React.Component<any, any> {
           }
         }
       });
-
-      // if (this.scatterGL != null) {
-      //   const pointsData = predictions.map(prediction => {
-      //     let scaledMesh = prediction.scaledMesh;
-      //     return scaledMesh.map(point => [-point[0], -point[1], -point[2]]);
-      //   });
-
-      //   let flattenedPointsData = [];
-      //   for (let i = 0; i < pointsData.length; i++) {
-      //     flattenedPointsData = flattenedPointsData.concat(pointsData[i]);
-      //   }
-      //   const dataset = new ScatterGL.Dataset(flattenedPointsData);
-
-      //   console.log('hellol here', this.scatterGLHasInitialized);
-      //   if (!this.scatterGLHasInitialized) {
-      //     // this.scatterGL.render(dataset);
-      //   } else {
-      //     // this.scatterGL.updateDataset(dataset);
-      //   }
-      //   this.scatterGLHasInitialized = true;
-      // }
     }
 
     requestAnimationFrame(
@@ -113,8 +243,10 @@ class App extends React.Component<any, any> {
     console.log(VideoSDK);
 
     VideoSDK.connect('token', {
-      url: 'https://176.9.72.40:3000/',
+      // url: 'https://176.9.72.40:3000/',
+      url: 'https://localhost:3000/',
       name: `Suraj` + Math.floor(Math.random() * 10),
+      // name: `Suraj`,
       roomName: 'new',
     })
       .then(async (room: any) => {
@@ -125,26 +257,40 @@ class App extends React.Component<any, any> {
         room.on('participantConnected', async participantConnected => {
           //
           console.log('participantConnected', participantConnected);
+          let name = participantConnected.name;
 
           var container = document.createElement('div');
 
           container.className = 'canvas-wrapper';
           container.style.display = 'flex';
+          container.id = 'video-' + name;
 
-          let name = participantConnected.name;
           // container.id = name;
           var span = document.createElement('span');
           // var video = participantConnected.video;
           // var screen = document.createElement('video');
 
           // // container.onclick = switchContainerClass;
-          // span.appendChild(document.createTextNode(name));
-          // container.appendChild(span);
+          span.appendChild(document.createTextNode(name));
+          container.appendChild(span);
 
           //@ts-ignore
 
           var video = participantConnected.getVideoElement();
 
+          // if (participantConnected.name === 'bot') {
+          //   video = document.createElement('div');
+          //   video.appendChild(document.createTextNode('BOT'));
+          //   setTimeout(() => {
+          //     console.log('hello here', this.speak);
+          //     this.speak('hello there!');
+          //   }, 2000);
+          // } else {
+          //   setTimeout(() => {
+          //     // this.recognition.start();
+          //   });
+          // }
+          // video.title = 'TEST';
           // if (name.startsWith('Screen-')) {
           //   video = participantConnected.getScreenElement();
           // }
@@ -200,34 +346,32 @@ class App extends React.Component<any, any> {
             ctx.fillStyle = '#32EEDB';
             ctx.strokeStyle = '#32EEDB';
             ctx.lineWidth = 0.5;
-
             const model = await facemesh.load({ maxFaces: 1 });
-            // const scattergl: any = document.querySelector(
-            //   '#scatter-gl-container'
-            // );
-
-            // if (!scattergl) {
-            //   return;
-            // }
-            // this.scatterGL = new ScatterGL(scattergl, {
-            //   rotateOnStart: false,
-            //   selectEnabled: false,
-            // });
-            this.renderPrediction(canvas, ctx, participantConnected, model);
           }, 1000);
         });
 
         room.on('participantDisconnected', participant => {
           console.log('participant disconnected');
+          var element = document.getElementById('video-' + participant.name);
+          if (element) {
+            element.parentNode.removeChild(element);
+          }
           //
         });
 
         room.on('disconnected', error => {
-          console.log('room disconnected');
-
           room.participants.forEach(participant => {
             //
           });
+        });
+
+        room.on('speak', data => {
+          console.log('room disconnected', data);
+          this.speak(data.msg);
+
+          // room.participants.forEach(participant => {
+          //   //
+          // });
         });
       })
       .catch(Error => {
@@ -255,6 +399,35 @@ class App extends React.Component<any, any> {
         >
           Share Screen
         </button>
+        <button
+          onClick={() => {
+            // this.recognition.start();
+            this.speak('hello there!');
+          }}
+        >
+          speak
+        </button>
+        <button
+          onClick={() => {
+            console.log('speech ::: start here', 'participants here');
+
+            // final_transcript = '';
+            // this.recognition.lang = select_dialect.value;
+            // recognition.start();
+
+            this.recognition.start();
+          }}
+        >
+          start
+        </button>
+        {/* <button
+          onClick={() => {
+            console.log('speech ::: start here', 'participants here');
+          }}
+        >
+          quickstart
+        </button> */}
+
         <div id="participants" />
         <div className="canvas-wrapper">
           <video
@@ -267,6 +440,18 @@ class App extends React.Component<any, any> {
           ></video>
         </div>
         <div id="scatter-gl-container"></div>
+
+        <div id="subtitle">{this.state.caption}</div>
+        {/* <textarea id="maintext" rows={5} cols={50} /> */}
+
+        <button
+          onClick={() => {
+            // this.recognition.start();
+            VideoSDK.startPlaying();
+          }}
+        >
+          play remote video
+        </button>
       </div>
     );
   }
