@@ -112,6 +112,9 @@ class App extends React.Component<any, any> {
     };
   }
 
+  record = () => {
+    VideoSDK.record();
+  };
   speak = (text?: string) => {
     //
 
@@ -244,7 +247,7 @@ class App extends React.Component<any, any> {
 
     VideoSDK.connect('token', {
       // url: 'https://176.9.72.40:3000/',
-      url: 'https://localhost:3000/',
+      url: 'https://localhost:8899/',
       name: `Suraj` + Math.floor(Math.random() * 10),
       // name: `Suraj`,
       roomName: 'new',
@@ -406,6 +409,14 @@ class App extends React.Component<any, any> {
           }}
         >
           speak
+        </button>
+        <button
+          onClick={() => {
+            // this.recognition.start();
+            this.record();
+          }}
+        >
+          record
         </button>
         <button
           onClick={() => {

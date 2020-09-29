@@ -31,6 +31,7 @@ class Video {
       roomName: string;
     }
   ) {
+    console.log('video sdk connect here');
     socket = socketIOClient(config.url);
 
     this.currentParticipantName = config.name;
@@ -126,12 +127,11 @@ class Video {
 
   receiveVideoResponse(result: any) {
     const participant = this.room.participants.get(result.name);
-
-    console.log(participant, 'hello here 222');
     if (participant) {
       participant.rtcPeer.processAnswer(result.sdpAnswer, function(error: any) {
         if (error) return console.error(error);
       });
+      participant.emit('receiveVideo', participant);
     }
   }
 
@@ -320,6 +320,15 @@ class Video {
     socket.close();
   };
 
+  record() {
+    var message = {
+      id: 'record',
+      name: this.currentParticipantName,
+      roomName: this.room.name,
+    };
+
+    socket.emit('message', message);
+  }
   shareScreen() {
     console.log('hello here');
     // var audioConstraints = {
