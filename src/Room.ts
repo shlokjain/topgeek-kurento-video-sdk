@@ -6,6 +6,9 @@ export default class Room extends Model {
 
   name: string;
   participants: Map<string, Participant> = new Map();
+  recording: boolean;
+  messages: Array<any> = [];
+  room: Room;
 
   constructor(name: string) {
     super();

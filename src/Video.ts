@@ -69,6 +69,24 @@ class Video {
           this.room.emit('speak', parsedMessage);
           console.log(parsedMessage, 'reply on event');
           break;
+
+        case 'recordingStarted':
+          this.room.recording = true;
+          this.room.emit('recording', true);
+          break;
+
+        case 'recordingStopped':
+          this.room.recording = false;
+          this.room.emit('recording', false);
+          break;
+        case 'receiveText':
+          this.room.messages.push(parsedMessage);
+          this.room.emit('receiveText', parsedMessage);
+          break;
+        case 'joinedRoom':
+          this.room.messages = parsedMessage.messages;
+          this.room.emit('connected', this.room);
+          break;
         case 'iceCandidate':
           // console.log('zzzzzzz');
           const participant = this.room.participants.get(parsedMessage.name);
@@ -155,7 +173,7 @@ class Video {
     };
     let name = request.name;
     if (this.room) {
-      var participant = new Participant(name);
+      var participant = new Participant(name, this.room);
       this.room.connectParticipant(participant);
       var video = participant.getVideoElement();
 
@@ -329,6 +347,26 @@ class Video {
 
     socket.emit('message', message);
   }
+
+  sendTextToRoom(text: any) {
+    var message = {
+      id: 'sendTextToRoom',
+      name: this.currentParticipantName,
+      roomName: this.room.name,
+      text: text,
+    };
+
+    socket.emit('message', message);
+  }
+  stopRecording() {
+    var message = {
+      id: 'stopRecording',
+      name: this.currentParticipantName,
+      roomName: this.room.name,
+    };
+
+    socket.emit('message', message);
+  }
   shareScreen() {
     console.log('hello here');
     // var audioConstraints = {
@@ -379,7 +417,7 @@ class Video {
   }
 
   receiveVideo = (name: any) => {
-    var participant = new Participant(name);
+    var participant = new Participant(name, this.room);
     this.room.connectParticipant(participant);
 
     if (this.room) {

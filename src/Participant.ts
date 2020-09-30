@@ -1,14 +1,17 @@
+import Room from 'Room';
 import Model from './Model';
 
 export default class Participant extends Model {
   name: string;
+  room: Room;
   rtcPeer: any;
 
   track: any;
   screen: any;
-  constructor(name: string) {
+  constructor(name: string, room: Room) {
     super();
     this.name = name;
+    this.room = room;
     Object.defineProperty(this, 'rtcPeer', { writable: true });
 
     console.log(name, 'name here');
