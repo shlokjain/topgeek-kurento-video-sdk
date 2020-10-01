@@ -25,10 +25,7 @@ class Video {
   };
 
   get currentUser() {
-    const user = find(this.room.participants, (participant: any) => {
-      return participant.name === this.currentParticipantName;
-    });
-
+    const user = this.room.participants.get(this.currentParticipantName);
     return user;
   }
   connect(
