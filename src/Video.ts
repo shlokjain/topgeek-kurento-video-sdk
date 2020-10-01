@@ -25,8 +25,11 @@ class Video {
   };
 
   get currentUser() {
-    const user = this.room.participants.get(this.currentParticipantName);
-    return user;
+    if (this.room) {
+      const user = this.room.participants.get(this.currentParticipantName);
+      return user;
+    }
+    return;
   }
   connect(
     token: string,
@@ -34,6 +37,8 @@ class Video {
       url: string;
       name: string;
       roomName: string;
+      videoEnabled: boolean;
+      audioEnabled: boolean;
     }
   ) {
     console.log('video sdk connect here');
@@ -116,6 +121,8 @@ class Video {
           id: 'joinRoom',
           name: config.name,
           roomName: config.roomName,
+          videoEnabled: config.videoEnabled,
+          audioEnabled: config.videoEnabled,
         };
         this.sendMessage(message);
         this.room = new Room(config.roomName);
