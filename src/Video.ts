@@ -2,6 +2,7 @@ import Room from './Room';
 import socketIOClient from 'socket.io-client';
 import kurentoUtils from 'kurento-utils';
 import Participant from './Participant';
+import { find } from 'lodash';
 
 var socket: any;
 
@@ -23,6 +24,13 @@ class Video {
     socket.emit('message', message);
   };
 
+  get currentUser() {
+    const user = find(this.room.participants, (participant: any) => {
+      return participant.name === this.currentParticipantName;
+    });
+
+    return user;
+  }
   connect(
     token: string,
     config: {
