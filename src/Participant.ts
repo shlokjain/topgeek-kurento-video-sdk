@@ -5,9 +5,9 @@ export default class Participant extends Model {
   name: string;
   room: Room;
   rtcPeer: any;
-
   track: any;
   screen: any;
+  isScreenShared: boolean = false;
   constructor(name: string, room: Room) {
     super();
     this.name = name;
@@ -40,5 +40,10 @@ export default class Participant extends Model {
 
   getScreenElement() {
     return this.screen;
+  }
+
+  setScreenSharing(value: boolean) {
+    this.isScreenShared = value;
+    this.emit('isScreenShared', value);
   }
 }

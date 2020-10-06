@@ -11,6 +11,13 @@ class Video {
   room: Room;
   screenShare: any;
   currentParticipantName: string;
+  config: {
+    url: string;
+    name: string;
+    roomName: string;
+    videoEnabled: boolean;
+    audioEnabled: boolean;
+  };
 
   constructor() {
     //
@@ -41,11 +48,9 @@ class Video {
       audioEnabled: boolean;
     }
   ) {
-    console.log('video sdk connect here');
+    this.config = config;
     socket = socketIOClient(config.url);
-
     this.currentParticipantName = config.name;
-
     socket.on('event', function(data: any) {
       console.log('connected on event', data);
     });
@@ -63,9 +68,33 @@ class Video {
           break;
 
         case 'newParticipantArrived':
-          console.log(parsedMessage.id, '*****', parsedMessage.name);
-
           this.onNewParticipant(parsedMessage);
+          break;
+
+        case 'screenShared':
+          console.log(parsedMessage.id, '@@@@', parsedMessage);
+          this.onScreenShared(parsedMessage);
+          break;
+        case 'screenSharingStarted':
+          {
+            const participant: any = this.room.participants.get(
+              parsedMessage.name
+            );
+            if (participant) {
+              participant.setScreenSharing(true);
+            }
+          }
+          break;
+
+        case 'screenSharingStopped':
+          {
+            const participant: any = this.room.participants.get(
+              parsedMessage.name
+            );
+            if (participant) {
+              participant.setScreenSharing(false);
+            }
+          }
           break;
 
         case 'participantLeft':
@@ -145,6 +174,15 @@ class Video {
     };
     socket.emit('message', msg);
   }
+  offerToReceiveScreen(participant: any, error: any, offerSdp: any, wp: any) {
+    if (error) return console.error('sdp offer error');
+    var msg = {
+      id: 'receiveScreenFrom',
+      sender: participant.name,
+      sdpOffer: offerSdp,
+    };
+    socket.emit('message', msg);
+  }
 
   onIceCandidate = (participant: any, candidate: any, wp: any) => {
     var message = {
@@ -171,9 +209,41 @@ class Video {
     this.receiveVideo(request.name);
   }
 
+  onScreenShared(request: any) {
+    // console.log('request name new', request.name);
+
+    var participant = new Participant('Screen-' + request.name, this.room);
+    this.room.connectParticipant(participant);
+
+    if (this.room) {
+      var video = participant.getVideoElement();
+
+      // if (name.startsWith('Screen-')) {
+      //   video = participant.getScreenElement();
+      // }
+      var options = {
+        remoteVideo: video,
+        onicecandidate: this.onIceCandidate.bind(participant, participant),
+      };
+      //@ts-ignore
+      participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
+        options,
+        error => {
+          if (error) {
+            return console.error(error);
+          }
+          participant.rtcPeer.generateOffer(
+            this.offerToReceiveScreen.bind(participant, participant)
+          );
+        }
+      );
+    }
+    // this.receiveVideo(request.name);
+  }
+
   onExistingParticipants(request: any) {
     console.log('request name', request.name);
-    var constraints = {
+    var constraints: any = {
       audio: true,
       video: {
         mandatory: {
@@ -201,6 +271,14 @@ class Video {
         onicecandidate: this.onIceCandidate.bind(participant, participant),
       };
 
+      // if (this.currentUser === participant) {
+      //   if (this.config.videoEnabled === false) {
+      //     options.mediaConstraints.video = false;
+      //   }
+      //   if (this.config.audioEnabled === false) {
+      //     options.mediaConstraints.audio = false;
+      //   }
+      // }
       //@ts-ignore
       participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
         options,
@@ -211,6 +289,13 @@ class Video {
           participant.rtcPeer.generateOffer(
             this.offerToReceiveVideo.bind(participant, participant)
           );
+
+          if (!this.config.videoEnabled) {
+            participant.rtcPeer.videoEnabled = false;
+          }
+          if (!this.config.audioEnabled) {
+            participant.rtcPeer.audioEnabled = false;
+          }
         }
       );
       request.data.forEach(this.receiveVideo);
@@ -379,6 +464,15 @@ class Video {
 
     socket.emit('message', message);
   }
+  stopScreenSharing() {
+    var message = {
+      id: 'stopScreenSharing',
+      name: this.currentParticipantName,
+      roomName: this.room.name,
+    };
+
+    socket.emit('message', message);
+  }
   shareScreen() {
     console.log('hello here');
     // var audioConstraints = {
@@ -402,8 +496,6 @@ class Video {
     // };
     let displayMediaOptions = { video: true, audio: false };
 
-    // navigator.mediaDevices.getUserMedia
-
     navigator.mediaDevices['getDisplayMedia'](displayMediaOptions)
       .then((stream: any) => {
         const participant = this.room.participants.get(
@@ -418,10 +510,8 @@ class Video {
             name: this.currentParticipantName,
             roomName: this.room.name,
           };
-
           socket.emit('message', message);
         }
-        // let video_el = document.getElementById('share-screen-video');
       })
       .catch((error: any) => {
         console.log(error);

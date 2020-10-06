@@ -205,11 +205,6 @@ class App extends React.Component<any, any> {
     const predictions = await model.estimateFaces(video);
     ctx.drawImage(video, 0, 0, 320, 240);
 
-    // setTimeout(() => {
-    //   this.ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // }, 200);
-
-    console.log(predictions.length, 'length');
     if (predictions.length > 0) {
       // this.ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -251,6 +246,8 @@ class App extends React.Component<any, any> {
       name: `Suraj` + Math.floor(Math.random() * 10),
       // name: `Suraj`,
       roomName: 'new',
+      videoEnabled: true,
+      audioEnabled: true,
     })
       .then(async (room: any) => {
         forEach(room.participants, participant => {
@@ -258,8 +255,6 @@ class App extends React.Component<any, any> {
         });
 
         room.on('participantConnected', async participantConnected => {
-          //
-          console.log('participantConnected', participantConnected);
           let name = participantConnected.name;
 
           var container = document.createElement('div');
@@ -268,47 +263,15 @@ class App extends React.Component<any, any> {
           container.style.display = 'flex';
           container.id = 'video-' + name;
 
-          // container.id = name;
           var span = document.createElement('span');
-          // var video = participantConnected.video;
-          // var screen = document.createElement('video');
 
-          // // container.onclick = switchContainerClass;
           span.appendChild(document.createTextNode(name));
           container.appendChild(span);
 
           //@ts-ignore
-
           var video = participantConnected.getVideoElement();
 
-          // if (participantConnected.name === 'bot') {
-          //   video = document.createElement('div');
-          //   video.appendChild(document.createTextNode('BOT'));
-          //   setTimeout(() => {
-          //     console.log('hello here', this.speak);
-          //     this.speak('hello there!');
-          //   }, 2000);
-          // } else {
-          //   setTimeout(() => {
-          //     // this.recognition.start();
-          //   });
-          // }
-          // video.title = 'TEST';
-          // if (name.startsWith('Screen-')) {
-          //   video = participantConnected.getScreenElement();
-          // }
-
-          // video.style.width = '300px';
-
-          // if (participantConnected.name.startsWith('Screen-')) {
-          //   console.log('hello here', participantConnected.name);
-          //   video = participantConnected.getScreenElement();
-          // }
-
-          // if (participantConnected.name === )
-          // video.style.transform = 'rotateY(180deg)';
-          // video.style['-webkit-transform'] = 'rotateY(180deg)';
-
+          video.style.width = '300px';
           var canvas: any = document.createElement('canvas');
           canvas.id = 'output-' + participantConnected.name;
 
@@ -318,13 +281,13 @@ class App extends React.Component<any, any> {
           //@ts-ignore
           document.getElementById('participants').appendChild(container);
 
-          //
+          participantConnected.on('startScreenSharing', () => {
+            console.log('screen shared started');
+          });
 
-          // this.canvas = document.getElementById('output');
-
-          // if (!this.canvas) {
-          //   return;
-          // }
+          participantConnected.on('stopScreenSharing', () => {
+            console.log('screen shared stopped');
+          });
           setTimeout(async () => {
             this.videoWidth = '320'; //video.getBoundingClientRect().width;
             this.videoHeight = '240'; //video.getBoundingClientRect().height;
@@ -402,6 +365,16 @@ class App extends React.Component<any, any> {
         >
           Share Screen
         </button>
+
+        <button
+          onClick={() => {
+            console.log(VideoSDK, 'participants here');
+            VideoSDK.stopScreenSharing();
+          }}
+        >
+          Share Screen
+        </button>
+
         <button
           onClick={() => {
             // this.recognition.start();
@@ -417,6 +390,16 @@ class App extends React.Component<any, any> {
           }}
         >
           record
+        </button>
+        <button
+          onClick={() => {
+            // this.recognition.start();
+
+            VideoSDK.currentUser?.rtcPeer.videoEnabled = !VideoSDK.currentUser
+              ?.rtcPeer.videoEnabled;
+          }}
+        >
+          video
         </button>
         <button
           onClick={() => {
