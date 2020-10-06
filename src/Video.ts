@@ -2,7 +2,7 @@ import Room from './Room';
 import socketIOClient from 'socket.io-client';
 import kurentoUtils from 'kurento-utils';
 import Participant from './Participant';
-import { find } from 'lodash';
+import { find, isNil } from 'lodash';
 
 var socket: any;
 
@@ -82,6 +82,10 @@ class Video {
             );
             if (participant) {
               participant.setScreenSharing(true);
+              this.room.emit('isScreenShared', {
+                user: participant,
+                value: true,
+              });
             }
           }
           break;
@@ -93,6 +97,10 @@ class Video {
             );
             if (participant) {
               participant.setScreenSharing(false);
+              this.room.emit('isScreenShared', {
+                user: participant,
+                value: false,
+              });
             }
           }
           break;
@@ -125,6 +133,22 @@ class Video {
         case 'joinedRoom':
           this.room.messages = parsedMessage.messages;
           this.room.emit('connected', this.room);
+          break;
+        case 'setAudio':
+          {
+            const participant = this.room.participants.get(parsedMessage.name);
+            if (participant) {
+              participant.setAudio(parsedMessage.value);
+            }
+          }
+          break;
+        case 'setVideo':
+          {
+            const participant = this.room.participants.get(parsedMessage.name);
+            if (participant) {
+              participant.setVideo(parsedMessage.value);
+            }
+          }
           break;
         case 'iceCandidate':
           // console.log('zzzzzzz');
@@ -256,7 +280,6 @@ class Video {
     let name = request.name;
     if (this.room) {
       var participant = new Participant(name, this.room);
-      this.room.connectParticipant(participant);
       var video = participant.getVideoElement();
 
       // var videoScreen = participant.getScreenElement();
@@ -290,18 +313,47 @@ class Video {
             this.offerToReceiveVideo.bind(participant, participant)
           );
 
+          participant.rtcPeer.videoEnabled = true;
+          participant.rtcPeer.audioEnabled = true;
           if (!this.config.videoEnabled) {
             participant.rtcPeer.videoEnabled = false;
           }
           if (!this.config.audioEnabled) {
             participant.rtcPeer.audioEnabled = false;
           }
+          this.room.connectParticipant(participant);
         }
       );
       request.data.forEach(this.receiveVideo);
     }
 
     // }
+  }
+
+  setAudio = (value: boolean) => {
+    if (this.currentUser) {
+      var msg = {
+        id: 'setAudio',
+        sender: this.currentUser.name,
+        value: value,
+        roomName: this.room.name,
+      };
+
+      socket.emit('message', msg);
+    }
+  };
+  setVideo(value: boolean) {
+    if (this.currentUser) {
+      // this.currentUser.emit('video', value);
+      var msg = {
+        id: 'setVideo',
+        sender: this.currentUser.name,
+        value: value,
+        roomName: this.room.name,
+      };
+
+      socket.emit('message', msg);
+    }
   }
 
   onPlayOffer = (error: any, offer: any) => {
@@ -520,7 +572,6 @@ class Video {
 
   receiveVideo = (name: any) => {
     var participant = new Participant(name, this.room);
-    this.room.connectParticipant(participant);
 
     if (this.room) {
       var video = participant.getVideoElement();
@@ -542,9 +593,19 @@ class Video {
           participant.rtcPeer.generateOffer(
             this.offerToReceiveVideo.bind(participant, participant)
           );
+
+          if (isNil(participant.rtcPeer.audioEnabled)) {
+            participant.rtcPeer.audioEnabled = true;
+          }
+          if (isNil(participant.rtcPeer.videoEnabled)) {
+            participant.rtcPeer.videoEnabled = true;
+          }
+
+          this.room.connectParticipant(participant);
         }
       );
     }
+
     // var video = participant.getScreenElement();
     // let video = document.getElementById("share-screen-video");
     // let video_el = document.getElementById("share-screen-video");

@@ -14,7 +14,6 @@ export default class Participant extends Model {
     this.room = room;
     Object.defineProperty(this, 'rtcPeer', { writable: true });
 
-    console.log(name, 'name here');
     this.track = document.createElement('video');
     this.track.autoplay = true;
     this.track.controls = false;
@@ -45,7 +44,6 @@ export default class Participant extends Model {
 
   setScreenSharing(value: boolean) {
     this.isScreenShared = value;
-    this.emit('isScreenShared', value);
   }
 
   setAudio(value: boolean) {
