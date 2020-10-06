@@ -27,6 +27,7 @@ export default class Participant extends Model {
     this.screen.autoplay = true;
     this.screen.controls = false;
     this.screen.srcObject = null;
+
     // this.screen.srcObject = new MediaStream();
   }
 
@@ -45,5 +46,14 @@ export default class Participant extends Model {
   setScreenSharing(value: boolean) {
     this.isScreenShared = value;
     this.emit('isScreenShared', value);
+  }
+
+  setAudio(value: boolean) {
+    this.rtcPeer.audioEnabled = value;
+    this.emit('audio', value);
+  }
+  setVideo(value: boolean) {
+    this.rtcPeer.videoEnabled = value;
+    this.emit('video', value);
   }
 }
