@@ -1,6 +1,6 @@
 {
   "name": "kurento-video-sdk",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "license": "MIT",
   "author": "suraj",
   "main": "dist/index.js",
