@@ -271,11 +271,11 @@ class Video {
     var constraints: any = {
       audio: true,
       video: {
-        width: {
-          exact: 1280,
-        },
-        height: {
-          exact: 720,
+        mandatory: {
+          maxWidth: 1280,
+          maxHeight: 720,
+          maxFrameRate: 30,
+          minFrameRate: 15,
         },
       },
     };
