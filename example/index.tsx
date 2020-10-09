@@ -31,41 +31,41 @@ class App extends React.Component<any, any> {
     this.state = {
       caption: '',
     };
-    this.recognition = new webkitSpeechRecognition();
+    // this.recognition = new webkitSpeechRecognition();
 
-    this.recognition.continuous = true;
-    this.recognition.interimResults = true;
+    // this.recognition.continuous = true;
+    // this.recognition.interimResults = true;
 
-    this.recognition.onresult = event => {
-      if (event.results.length > 0) {
-        console.log(event.results, 'speech ::: result here');
-        let subtitle = '';
-        const value = event.results[event.results.length - 1];
-        subtitle += ' ' + value[0].transcript;
+    // this.recognition.onresult = event => {
+    //   if (event.results.length > 0) {
+    //     console.log(event.results, 'speech ::: result here');
+    //     let subtitle = '';
+    //     const value = event.results[event.results.length - 1];
+    //     subtitle += ' ' + value[0].transcript;
 
-        if (value.isFinal) {
-          // console.log(value, 'speech ::: caption here');
-          VideoSDK.sendMessage({
-            query: subtitle,
-            id: 'query',
-          });
-        }
+    //     if (value.isFinal) {
+    //       // console.log(value, 'speech ::: caption here');
+    //       VideoSDK.sendMessage({
+    //         query: subtitle,
+    //         id: 'query',
+    //       });
+    //     }
 
-        this.setState({
-          caption: subtitle,
-        });
-      }
-    };
-    // this.recognition.onresult = function(event) {
-    //   console.log(event.results, 'result here');
+    //     this.setState({
+    //       caption: subtitle,
+    //     });
+    //   }
     // };
-    this.recognition.onerror = function(event) {
-      console.log(event, 'speech ::: onerror here');
-    };
-    this.recognition.onend = function() {
-      this.recognition.start();
-      console.log('speech ::: end here');
-    };
+    // // this.recognition.onresult = function(event) {
+    // //   console.log(event.results, 'result here');
+    // // };
+    // this.recognition.onerror = function(event) {
+    //   console.log(event, 'speech ::: onerror here');
+    // };
+    // this.recognition.onend = function() {
+    //   this.recognition.start();
+    //   console.log('speech ::: end here');
+    // };
 
     //
 
@@ -242,8 +242,8 @@ class App extends React.Component<any, any> {
 
     VideoSDK.connect('token', {
       // url: 'https://176.9.72.40:3000/',
-      url: 'https://localhost:8899/',
-      name: `Suraj` + Math.floor(Math.random() * 10),
+      url: 'https://localhost/',
+      name: `Suraj` + Math.floor(Math.random() * 100),
       // name: `Suraj`,
       roomName: 'new',
       videoEnabled: true,
@@ -288,32 +288,32 @@ class App extends React.Component<any, any> {
           participantConnected.on('stopScreenSharing', () => {
             console.log('screen shared stopped');
           });
-          setTimeout(async () => {
-            this.videoWidth = '320'; //video.getBoundingClientRect().width;
-            this.videoHeight = '240'; //video.getBoundingClientRect().height;
+          // setTimeout(async () => {
+          //   this.videoWidth = '320'; //video.getBoundingClientRect().width;
+          //   this.videoHeight = '240'; //video.getBoundingClientRect().height;
 
-            canvas.width = this.videoWidth;
-            canvas.height = this.videoHeight;
+          //   canvas.width = this.videoWidth;
+          //   canvas.height = this.videoHeight;
 
-            const canvasContainer: any = document.querySelector(
-              '.canvas-wrapper'
-            );
+          //   const canvasContainer: any = document.querySelector(
+          //     '.canvas-wrapper'
+          //   );
 
-            canvasContainer.style.width = this.videoWidth + 'px';
-            canvasContainer.style.height = this.videoHeight + 'px';
-            const ctx = canvas.getContext('2d');
+          //   canvasContainer.style.width = this.videoWidth + 'px';
+          //   canvasContainer.style.height = this.videoHeight + 'px';
+          //   const ctx = canvas.getContext('2d');
 
-            // this.ctx.translate(canvas.width, 0);
-            // this.ctx.scale(-1, 1);
+          //   // this.ctx.translate(canvas.width, 0);
+          //   // this.ctx.scale(-1, 1);
 
-            if (!ctx) {
-              return;
-            }
-            ctx.fillStyle = '#32EEDB';
-            ctx.strokeStyle = '#32EEDB';
-            ctx.lineWidth = 0.5;
-            const model = await facemesh.load({ maxFaces: 1 });
-          }, 1000);
+          //   if (!ctx) {
+          //     return;
+          //   }
+          //   ctx.fillStyle = '#32EEDB';
+          //   ctx.strokeStyle = '#32EEDB';
+          //   ctx.lineWidth = 0.5;
+          //   const model = await facemesh.load({ maxFaces: 1 });
+          // }, 1000);
         });
 
         room.on('participantDisconnected', participant => {
@@ -395,8 +395,7 @@ class App extends React.Component<any, any> {
           onClick={() => {
             // this.recognition.start();
 
-            VideoSDK.currentUser?.rtcPeer.videoEnabled = !VideoSDK.currentUser
-              ?.rtcPeer.videoEnabled;
+            VideoSDK.setVideo(!VideoSDK.currentUser?.rtcPeer.videoEnabled);
           }}
         >
           video

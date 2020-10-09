@@ -220,6 +220,7 @@ class Video {
   receiveVideoResponse(result: any) {
     const participant = this.room.participants.get(result.name);
     if (participant) {
+      console.log(result.sdpAnswer, 'ans wer here');
       participant.rtcPeer.processAnswer(result.sdpAnswer, function(error: any) {
         if (error) return console.error(error);
       });
@@ -269,11 +270,12 @@ class Video {
     console.log('request name', request.name);
     var constraints: any = {
       audio: true,
+
       video: {
         mandatory: {
-          maxWidth: 320,
-          maxFrameRate: 15,
-          minFrameRate: request.existingParticipants,
+          minWidth: 1280,
+          minHeight: 720,
+          minFrameRate: 30,
         },
       },
     };
@@ -549,7 +551,8 @@ class Video {
     let displayMediaOptions = { video: true, audio: false };
 
     navigator.mediaDevices['getDisplayMedia'](displayMediaOptions)
-      .then((stream: any) => {
+      .then((stream: any, data: any) => {
+        console.log(stream, data, 'all here');
         const participant = this.room.participants.get(
           this.currentParticipantName
         );
