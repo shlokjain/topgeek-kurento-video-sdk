@@ -270,12 +270,12 @@ class Video {
     console.log('request name', request.name);
     var constraints: any = {
       audio: true,
-
       video: {
-        mandatory: {
-          minWidth: 1280,
-          minHeight: 720,
-          minFrameRate: 30,
+        width: {
+          exact: 720,
+        },
+        maxHeight: {
+          exact: 1280,
         },
       },
     };
