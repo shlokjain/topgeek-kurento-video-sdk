@@ -272,10 +272,10 @@ class Video {
       audio: true,
       video: {
         width: {
-          exact: 720,
-        },
-        maxHeight: {
           exact: 1280,
+        },
+        height: {
+          exact: 720,
         },
       },
     };
