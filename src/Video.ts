@@ -81,13 +81,20 @@ class Video {
           break;
         case 'screenSharingStarted':
           {
-            const participant: any = this.room.participants.get(
-              parsedMessage.name
-            );
-            if (participant) {
-              participant.setScreenSharing(true);
+            // const participant: any = this.room.participants.get(
+            //   parsedMessage.name
+            // );
+
+            // console.log(
+            //   'hello here here *************',
+            //   participant,
+            //   parsedMessage.name
+            // );
+
+            if (this.currentUser) {
+              this.currentUser.setScreenSharing(true);
               this.room.emit('isScreenShared', {
-                user: participant,
+                user: this.currentUser,
                 value: true,
               });
             }
@@ -96,13 +103,13 @@ class Video {
 
         case 'screenSharingStopped':
           {
-            const participant: any = this.room.participants.get(
-              parsedMessage.name
-            );
-            if (participant) {
-              participant.setScreenSharing(false);
+            // const participant: any = this.room.participants.get(
+            //   parsedMessage.name
+            // );
+            if (this.currentUser) {
+              this.currentUser.setScreenSharing(false);
               this.room.emit('isScreenShared', {
-                user: participant,
+                user: this.currentUser,
                 value: false,
               });
             }
