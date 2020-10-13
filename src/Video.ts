@@ -71,6 +71,10 @@ class Video {
           this.onNewParticipant(parsedMessage);
           break;
 
+        case 'newScreenShared':
+          console.log(parsedMessage.id, '@@@@', parsedMessage);
+          this.onNewScreenShared(parsedMessage);
+          break;
         case 'screenShared':
           console.log(parsedMessage.id, '@@@@', parsedMessage);
           this.onScreenShared(parsedMessage);
@@ -190,6 +194,7 @@ class Video {
   }
 
   offerToReceiveVideo(participant: any, error: any, offerSdp: any, wp: any) {
+    console.log(participant, 'participant here');
     if (error) return console.error('sdp offer error');
     var msg = {
       id: 'receiveVideoFrom',
@@ -209,6 +214,7 @@ class Video {
   }
 
   onIceCandidate = (participant: any, candidate: any, wp: any) => {
+    console.log('hello here on new sceen 2222');
     var message = {
       id: 'onIceCandidate',
       candidate: candidate,
@@ -217,10 +223,21 @@ class Video {
     socket.emit('message', message);
   };
 
+  onIceCandidateScreen = (participant: any, candidate: any, wp: any) => {
+    var message = {
+      id: 'onIceCandidateScreen',
+      candidate: candidate,
+      sender: participant.name,
+    };
+    socket.emit('message', message);
+  };
+
   receiveVideoResponse(result: any) {
     const participant = this.room.participants.get(result.name);
+
+    console.log(result.name, participant, 'ans wer here');
+
     if (participant) {
-      console.log(result.sdpAnswer, 'ans wer here');
       participant.rtcPeer.processAnswer(result.sdpAnswer, function(error: any) {
         if (error) return console.error(error);
       });
@@ -228,28 +245,17 @@ class Video {
     }
   }
 
-  onNewParticipant(request: any) {
-    console.log('request name new', request.name);
-
-    this.receiveVideo(request.name);
-  }
-
-  onScreenShared(request: any) {
-    // console.log('request name new', request.name);
-
+  onNewScreenShared(request: any) {
     var participant = new Participant('Screen-' + request.name, this.room);
-    this.room.connectParticipant(participant);
 
     if (this.room) {
       var video = participant.getVideoElement();
-
-      // if (name.startsWith('Screen-')) {
-      //   video = participant.getScreenElement();
-      // }
       var options = {
         remoteVideo: video,
         onicecandidate: this.onIceCandidate.bind(participant, participant),
       };
+
+      console.log('hello here on new sceen');
       //@ts-ignore
       participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
         options,
@@ -258,12 +264,72 @@ class Video {
             return console.error(error);
           }
           participant.rtcPeer.generateOffer(
-            this.offerToReceiveScreen.bind(participant, participant)
+            this.offerToReceiveVideo.bind(participant, participant)
           );
+          this.room.connectParticipant(participant);
         }
       );
     }
-    // this.receiveVideo(request.name);
+  }
+
+  onScreenShared(request: any) {
+    var constraints: any = {
+      audio: false,
+      video: {
+        mandatory: {
+          maxWidth: 1280,
+          maxHeight: 720,
+          maxFrameRate: 30,
+          minFrameRate: 15,
+        },
+      },
+    };
+    let name = request.name;
+    if (this.room) {
+      var participant = new Participant('Screen-' + name, this.room);
+      var video = participant.getVideoElement();
+
+      // var videoScreen = participant.getScreenElement();
+      let video_el = this.screenShare; //
+      // docume/nt.getElementById('share-screen-video');
+      var options = {
+        localVideo: video,
+        videoStream: video_el.srcObject,
+        mediaConstraints: constraints,
+        onicecandidate: this.onIceCandidate.bind(participant, participant),
+      };
+
+      //@ts-ignore
+      participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
+        options,
+        error => {
+          if (error) {
+            return console.error(error);
+          }
+          // participant.rtcPeer.generateOffer(
+          //   this.offerToReceiveVideo.bind(participant, participant)
+          // );
+
+          // participant.rtcPeer.videoEnabled = true;
+          // participant.rtcPeer.audioEnabled = true;
+          // if (!this.config.videoEnabled) {
+          //   participant.rtcPeer.videoEnabled = false;
+          // }
+          // if (!this.config.audioEnabled) {
+          //   participant.rtcPeer.audioEnabled = false;
+          // }
+
+          this.room.connectParticipant(participant);
+        }
+      );
+
+      // request.data.forEach(this.onNewScreenShared);
+    }
+  }
+  onNewParticipant(request: any) {
+    console.log('request name new', request.name);
+
+    this.receiveVideo(request.name);
   }
 
   onExistingParticipants(request: any) {
@@ -289,11 +355,13 @@ class Video {
       // docume/nt.getElementById('share-screen-video');
 
       var video = participant.getVideoElement();
+      video.srcObject = video_el.srcObject;
       var options = {
         localVideo: video,
         videoStream: video_el.srcObject,
         mediaConstraints: constraints,
         onicecandidate: this.onIceCandidate.bind(participant, participant),
+        // sendSource: 'desktop',
       };
 
       // if (this.currentUser === participant) {
@@ -579,9 +647,6 @@ class Video {
     if (this.room) {
       var video = participant.getVideoElement();
 
-      // if (name.startsWith('Screen-')) {
-      //   video = participant.getScreenElement();
-      // }
       var options = {
         remoteVideo: video,
         onicecandidate: this.onIceCandidate.bind(participant, participant),

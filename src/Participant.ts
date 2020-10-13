@@ -21,6 +21,8 @@ export default class Participant extends Model {
     const mediaStream = new MediaStream();
     this.track.srcObject = mediaStream;
 
+    // this.track.src =
+    //   'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
     this.screen = document.createElement('video');
     this.screen.id = 'screen-' + name;
     this.screen.autoplay = true;
