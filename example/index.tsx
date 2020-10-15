@@ -3,6 +3,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { data, Video } from '../src';
 import { forEach, result } from 'lodash';
+import kurentoUtils from 'kurento-utils';
 
 import { TRIANGULATION } from './triangulation';
 // const App = () => {
@@ -237,6 +238,76 @@ class App extends React.Component<any, any> {
       this.renderPrediction.bind(this, canvas, ctx, participant, model)
     );
   };
+
+  stop = k => {
+    const video = VideoSDK.currentUser?.track;
+    video.srcObject.getTracks().map(t => {
+      console.log(t, 't here ');
+      return t.kind == k && t.stop();
+    });
+  };
+  start = k => {
+    // video.srcObject.getTracks().map(t => t.kind == k && t.stop(false));
+
+    // docume/nt.getElementById('share-screen-video');
+
+    var constraints: any = {
+      audio: true,
+      video: {
+        mandatory: {
+          maxWidth: 1280,
+          maxHeight: 720,
+          maxFrameRate: 30,
+          minFrameRate: 15,
+        },
+      },
+    };
+
+    const participant = VideoSDK.currentUser;
+
+    if (!participant) {
+      return;
+    }
+    var video = VideoSDK.currentUser?.track;
+    var options = {
+      localVideo: video,
+      mediaConstraints: constraints,
+      onicecandidate: VideoSDK.onIceCandidate.bind(participant, participant),
+      // sendSource: 'desktop',
+    };
+
+    // if (this.currentUser === participant) {
+    //   if (this.config.videoEnabled === false) {
+    //     options.mediaConstraints.video = false;
+    //   }
+    //   if (this.config.audioEnabled === false) {
+    //     options.mediaConstraints.audio = false;
+    //   }
+    // }
+    //@ts-ignore
+    participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
+      options,
+      error => {
+        if (error) {
+          return console.error(error);
+        }
+        participant.rtcPeer.generateOffer(
+          VideoSDK.offerToReceiveVideo.bind(participant, participant)
+        );
+
+        // participant.rtcPeer.videoEnabled = true;
+        // participant.rtcPeer.audioEnabled = true;
+        // if (!this.config.videoEnabled) {
+        //   participant.rtcPeer.videoEnabled = false;
+        // }
+        // if (!this.config.audioEnabled) {
+        //   participant.rtcPeer.audioEnabled = false;
+        // }
+        // this.room.connectParticipant(participant);
+      }
+    );
+  };
+
   componentDidMount() {
     console.log(VideoSDK);
 
@@ -248,6 +319,7 @@ class App extends React.Component<any, any> {
       roomName: 'new',
       videoEnabled: true,
       audioEnabled: true,
+      recording: false,
     })
       .then(async (room: any) => {
         forEach(room.participants, participant => {
@@ -272,6 +344,11 @@ class App extends React.Component<any, any> {
           var video = participantConnected.getVideoElement();
 
           video.style.width = '300px';
+          video.style.transform =
+            participantConnected === VideoSDK.currentUser
+              ? `rotateY(180deg)`
+              : undefined;
+
           var canvas: any = document.createElement('canvas');
           canvas.id = 'output-' + participantConnected.name;
 
@@ -372,10 +449,10 @@ class App extends React.Component<any, any> {
             VideoSDK.stopScreenSharing();
           }}
         >
-          Share Screen
+          stop sharing Screen
         </button>
 
-        <button
+        {/* <button
           onClick={() => {
             // this.recognition.start();
             this.speak('hello there!');
@@ -390,15 +467,22 @@ class App extends React.Component<any, any> {
           }}
         >
           record
-        </button>
+        </button> */}
         <button
           onClick={() => {
             // this.recognition.start();
-
-            VideoSDK.setVideo(!VideoSDK.currentUser?.rtcPeer.videoEnabled);
+            // this.start('video');
+            VideoSDK.setVideo(true);
           }}
         >
-          video
+          start video
+        </button>
+        <button
+          onClick={() => {
+            VideoSDK.setVideo(false);
+          }}
+        >
+          stop video
         </button>
         <button
           onClick={() => {

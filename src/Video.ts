@@ -46,6 +46,7 @@ class Video {
       roomName: string;
       videoEnabled: boolean;
       audioEnabled: boolean;
+      recording?: boolean;
     }
   ) {
     this.config = config;
@@ -144,6 +145,7 @@ class Video {
         case 'joinedRoom':
           this.room.messages = parsedMessage.messages;
           this.room.emit('connected', this.room);
+
           break;
         case 'setAudio':
           {
@@ -156,8 +158,14 @@ class Video {
         case 'setVideo':
           {
             const participant = this.room.participants.get(parsedMessage.name);
+
             if (participant) {
               participant.setVideo(parsedMessage.value);
+              participant.track.srcObject.getTracks().map((t: any) => {
+                return t.kind == 'video' && t.stop();
+              });
+            } else {
+              this.setMedia(participant, 'video', parsedMessage.value);
             }
           }
           break;
@@ -187,6 +195,7 @@ class Video {
           roomName: config.roomName,
           videoEnabled: config.videoEnabled,
           audioEnabled: config.videoEnabled,
+          recording: config.recording,
         };
         this.sendMessage(message);
         this.room = new Room(config.roomName);
@@ -242,7 +251,7 @@ class Video {
   receiveVideoResponse(result: any) {
     const participant = this.room.participants.get(result.name);
 
-    console.log(result.name, participant, 'ans wer here');
+    console.log(result.name, result.sdpAnswer, 'ans wer here');
 
     if (participant) {
       participant.rtcPeer.processAnswer(result.sdpAnswer, function(error: any) {
@@ -335,7 +344,6 @@ class Video {
   }
   onNewParticipant(request: any) {
     console.log('request name new', request.name);
-
     this.receiveVideo(request.name);
   }
 
@@ -421,7 +429,6 @@ class Video {
   };
   setVideo(value: boolean) {
     if (this.currentUser) {
-      // this.currentUser.emit('video', value);
       var msg = {
         id: 'setVideo',
         sender: this.currentUser.name,
@@ -689,6 +696,68 @@ class Video {
   onParticipantLeft(request: any) {
     const participant = this.room.participants.get(request.name);
     if (participant) this.room.removeParticipant(participant);
+  }
+
+  setMedia(participant: any, k: any, value: boolean) {
+    // if (!value) {
+    //   participant.track.srcObject.getTracks().map((t: any) => {
+    //     return t.kind == k && t.stop();
+    //   });
+    // } else {
+    // if (this.currentUser === participant) {
+    participant = participant
+      ? participant
+      : new Participant(this.currentParticipantName, this.room);
+
+    var constraints: any = {
+      audio: true,
+      video: {
+        mandatory: {
+          maxWidth: 1280,
+          maxHeight: 720,
+          maxFrameRate: 30,
+          minFrameRate: 15,
+        },
+      },
+    };
+    if (this.room) {
+      var video = participant.getVideoElement();
+      let video_el = this.screenShare; //
+
+      video.srcObject = video_el.srcObject;
+      var options = {
+        localVideo: video,
+        // videoStream: video_el.srcObject,
+        mediaConstraints: constraints,
+        onicecandidate: this.onIceCandidate.bind(participant, participant),
+        // sendSource: 'desktop',
+      };
+
+      //@ts-ignore
+      participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
+        options,
+        error => {
+          if (error) {
+            return console.error(error);
+          }
+          participant.rtcPeer.generateOffer(
+            this.offerToReceiveVideo.bind(participant, participant)
+          );
+
+          participant.rtcPeer.videoEnabled = true;
+          participant.rtcPeer.audioEnabled = true;
+          if (!this.config.videoEnabled) {
+            participant.rtcPeer.videoEnabled = false;
+          }
+          if (!this.config.audioEnabled) {
+            participant.rtcPeer.audioEnabled = false;
+          }
+          this.room.connectParticipant(participant);
+        }
+      );
+      // }
+      // }
+    }
   }
 }
 

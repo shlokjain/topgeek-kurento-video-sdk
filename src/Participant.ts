@@ -48,11 +48,23 @@ export default class Participant extends Model {
     this.isScreenShared = value;
   }
 
+  stopMedia = (k: any) => {
+    this.track.srcObject.getTracks().map((t: any) => {
+      console.log(t, 't here ');
+      return t.kind == k && t.stop();
+    });
+  };
   setAudio(value: boolean) {
     this.rtcPeer.audioEnabled = value;
+    // this.stopMedia('audio');
     this.emit('audio', value);
   }
   setVideo(value: boolean) {
+    // if (value == false) {
+    //   this.stopMedia('video');
+    // } else {
+    //   this.startMedia('video');
+    // }
     this.rtcPeer.videoEnabled = value;
     this.emit('video', value);
   }
