@@ -319,7 +319,7 @@ class App extends React.Component<any, any> {
       roomName: 'new',
       videoEnabled: true,
       audioEnabled: true,
-      recording: false,
+      recording: true,
     })
       .then(async (room: any) => {
         forEach(room.participants, participant => {
