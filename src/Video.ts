@@ -262,7 +262,7 @@ class Video {
   }
 
   onNewScreenShared(request: any) {
-    var participant = new Participant('Screen_' + request.name, this.room);
+    var participant = new Participant('Screen::' + request.name, this.room);
 
     if (this.room) {
       var video = participant.getVideoElement();
@@ -630,7 +630,13 @@ class Video {
     //     ],
     //   },
     // };
-    let displayMediaOptions = { video: true, audio: false };
+    let displayMediaOptions = {
+      video: {
+        width: { ideal: 1280, max: 1280 },
+        height: { ideal: 720, max: 720 },
+      },
+      audio: false,
+    };
 
     navigator.mediaDevices['getDisplayMedia'](displayMediaOptions)
       .then((stream: any, data: any) => {
