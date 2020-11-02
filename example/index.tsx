@@ -508,7 +508,7 @@ class App extends React.Component<any, any> {
         <div id="participants" />
         <div className="canvas-wrapper">
           <video
-            id="share-screen-video"
+            id="screen-video"
             style={{
               display: 'none',
             }}

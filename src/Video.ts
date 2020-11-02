@@ -262,7 +262,7 @@ class Video {
   }
 
   onNewScreenShared(request: any) {
-    var participant = new Participant('Screen-' + request.name, this.room);
+    var participant = new Participant('Screen_' + request.name, this.room);
 
     if (this.room) {
       var video = participant.getVideoElement();
@@ -302,12 +302,12 @@ class Video {
     };
     let name = request.name;
     if (this.room) {
-      var participant = new Participant('Screen-' + name, this.room);
+      var participant = new Participant('_' + name, this.room);
       var video = participant.getVideoElement();
 
       // var videoScreen = participant.getScreenElement();
       let video_el = this.screenShare; //
-      // docume/nt.getElementById('share-screen-video');
+      // docume/nt.getElementById('share-_video');
       var options = {
         localVideo: video,
         videoStream: video_el.srcObject,
@@ -367,7 +367,7 @@ class Video {
 
       // var videoScreen = participant.getScreenElement();
       let video_el = this.screenShare; //
-      // docume/nt.getElementById('share-screen-video');
+      // docume/nt.getElementById('share-_video');
 
       var video = participant.getVideoElement();
       video.srcObject = video_el.srcObject;
@@ -639,7 +639,7 @@ class Video {
           this.currentParticipantName
         );
         if (participant) {
-          let video_el = this.screenShare; //document.getElementById('share-screen-video');
+          let video_el = this.screenShare; //document.getElementById('share-_video');
           video_el.srcObject = stream;
 
           var message = {
@@ -689,8 +689,8 @@ class Video {
     }
 
     // var video = participant.getScreenElement();
-    // let video = document.getElementById("share-screen-video");
-    // let video_el = document.getElementById("share-screen-video");
+    // let video = document.getElementById("share-_video");
+    // let video_el = document.getElementById("share-_video");
   };
 
   onParticipantLeft(request: any) {
