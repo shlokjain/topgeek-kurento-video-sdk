@@ -262,7 +262,7 @@ class Video {
   }
 
   onNewScreenShared(request: any) {
-    var participant = new Participant('Screen::' + request.name, this.room);
+    var participant = new Participant('Screen-' + request.name, this.room);
 
     if (this.room) {
       var video = participant.getVideoElement();
