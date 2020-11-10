@@ -50,8 +50,13 @@ class Video {
     }
   ) {
     this.config = config;
-    socket = socketIOClient(config.url);
+    socket = socketIOClient(config.url, {
+      query: `accessToken=${token}`,
+    });
     this.currentParticipantName = config.name;
+    socket.on('error', function(data: any) {
+      console.error('Socket Error', data);
+    });
     socket.on('event', function(data: any) {
       console.log('connected on event', data);
     });

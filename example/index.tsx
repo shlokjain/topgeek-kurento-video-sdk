@@ -311,7 +311,7 @@ class App extends React.Component<any, any> {
   componentDidMount() {
     console.log(VideoSDK);
 
-    VideoSDK.connect('token', {
+    VideoSDK.connect(`ttg-socket-server-token`, {
       // url: 'https://176.9.72.40:3000/',
       url: 'https://localhost/',
       name: `Suraj` + Math.floor(Math.random() * 100),
