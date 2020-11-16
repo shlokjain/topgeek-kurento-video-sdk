@@ -405,14 +405,17 @@ class Video {
             this.offerToReceiveVideo.bind(participant, participant)
           );
 
-          participant.rtcPeer.videoEnabled = true;
-          participant.rtcPeer.audioEnabled = true;
-          if (!this.config.videoEnabled) {
-            participant.rtcPeer.videoEnabled = false;
+          if (!name.startsWith('Screen-')) {
+            participant.rtcPeer.videoEnabled = true;
+            participant.rtcPeer.audioEnabled = true;
+            if (!this.config.videoEnabled) {
+              participant.rtcPeer.videoEnabled = false;
+            }
+            if (!this.config.audioEnabled) {
+              participant.rtcPeer.audioEnabled = false;
+            }
           }
-          if (!this.config.audioEnabled) {
-            participant.rtcPeer.audioEnabled = false;
-          }
+
           this.room.connectParticipant(participant);
         }
       );
