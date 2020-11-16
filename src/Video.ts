@@ -166,11 +166,13 @@ class Video {
 
             if (participant) {
               participant.setVideo(parsedMessage.value);
-              participant.track.srcObject.getTracks().map((t: any) => {
-                return t.kind == 'video' && t.stop();
-              });
+
+              // participant.setVideo(parsedMessage.value);
+              // participant.track.srcObject.getTracks().map((t: any) => {
+              //   return t.kind == 'video' && t.stop();
+              // });
             } else {
-              this.setMedia(participant, 'video', parsedMessage.value);
+              // this.setMedia(participant, 'video', parsedMessage.value);
             }
           }
           break;
@@ -421,27 +423,47 @@ class Video {
   }
 
   setAudio = (value: boolean) => {
-    if (this.currentUser) {
-      var msg = {
-        id: 'setAudio',
-        sender: this.currentUser.name,
-        value: value,
-        roomName: this.room.name,
-      };
+    // if (this.currentUser) {
+    //   var msg = {
+    //     id: 'setAudio',
+    //     sender: this.currentUser.name,
+    //     value: value,
+    //     roomName: this.room.name,
+    //   };
+    //   socket.emit('message', msg);
+    // }
 
-      socket.emit('message', msg);
+    if (this.currentUser) {
+      const participant = this.room.participants.get(this.currentUser.name);
+      if (participant) {
+        participant.setAudio(value);
+      }
     }
   };
   setVideo(value: boolean) {
-    if (this.currentUser) {
-      var msg = {
-        id: 'setVideo',
-        sender: this.currentUser.name,
-        value: value,
-        roomName: this.room.name,
-      };
+    // if (this.currentUser) {
+    //   var msg = {
+    //     id: 'setVideo',
+    //     sender: this.currentUser.name,
+    //     value: value,
+    //     roomName: this.room.name,
+    //   };
+    //   socket.emit('message', msg);
+    // }
 
-      socket.emit('message', msg);
+    if (this.currentUser) {
+      const participant = this.room.participants.get(this.currentUser.name);
+
+      if (participant) {
+        participant.setVideo(value);
+
+        // participant.setVideo(parsedMessage.value);
+        // participant.track.srcObject.getTracks().map((t: any) => {
+        //   return t.kind == 'video' && t.stop();
+        // });
+      } else {
+        // this.setMedia(participant, 'video', parsedMessage.value);
+      }
     }
   }
 
