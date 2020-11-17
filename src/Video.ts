@@ -4,6 +4,14 @@ import kurentoUtils from 'kurento-utils';
 import Participant from './Participant';
 import { find, isNil } from 'lodash';
 
+const DEFAULT_VIDEO_CONSTRAINT = {
+  mandatory: {
+    maxWidth: 1280,
+    maxHeight: 720,
+    maxFrameRate: 30,
+    minFrameRate: 15,
+  },
+};
 var socket: any;
 
 class Video {
@@ -31,6 +39,46 @@ class Video {
     socket.emit('message', message);
   };
 
+  startStream = (participant: any, stream: 'audio' | 'video') => {
+    var video = participant.getVideoElement();
+
+    console.log(this.config.audioEnabled, 'enabled aud');
+    var options = {
+      localVideo: video,
+      // videoStream: video_el.srcObject,
+      mediaConstraints: {
+        video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
+        audio: true,
+      },
+      onicecandidate: this.onIceCandidate.bind(participant, participant),
+    };
+    participant.rtcPeer.dispose();
+    //@ts-ignore
+    participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
+      options,
+      error => {
+        if (error) {
+          return console.error(error);
+        }
+        participant.rtcPeer.generateOffer(
+          this.offerToReceiveVideo.bind(participant, participant)
+        );
+
+        participant.rtcPeer.audioEnabled = true;
+
+        if (!this.config.audioEnabled) {
+          participant.rtcPeer.audioEnabled = false;
+        }
+      }
+    );
+  };
+
+  stopStream = (participant: any, stream: 'audio' | 'video') => {
+    const oldTrack = participant.track.srcObject.getTracks();
+    oldTrack.map((t: any) => {
+      return t.kind == stream && t.stop();
+    });
+  };
   get currentUser() {
     if (this.room) {
       const user = this.room.participants.get(this.currentParticipantName);
@@ -83,7 +131,7 @@ class Video {
           break;
         case 'screenShared':
           console.log(parsedMessage.id, '@@@@', parsedMessage);
-          this.onScreenShared(parsedMessage);
+          // this.onScreenShared(parsedMessage);
           break;
         case 'screenSharingStarted':
           {
@@ -153,26 +201,63 @@ class Video {
 
           break;
         case 'setAudio':
-          {
-            const participant = this.room.participants.get(parsedMessage.name);
-            if (participant) {
-              participant.setAudio(parsedMessage.value);
-            }
-          }
+          // {
+          //   const participant = this.room.participants.get(parsedMessage.name);
+          //   if (participant) {
+          //     participant.setAudio(parsedMessage.value);
+          //   }
+          // }
           break;
         case 'setVideo':
           {
-            const participant = this.room.participants.get(parsedMessage.name);
+            // const participant = this.room.participants.get(parsedMessage.name);
+            // if (participant) {
+            //   console.log('hello here', parsedMessage.value);
+            //   // participant.setVideo(parsedMessage.value);
+            //   participant.setVideo(parsedMessage.value);
+            //   if (parsedMessage.value) {
+            //     this.startStream(participant);
+            //     // navigator.mediaDevices['getTracks']({
+            //     //   video: true,
+            //     //   audio: true,
+            //     // });
+            //   } else {
+            //     this.stopStream(participant);
+            //   }
+            // } else {
+            //   // this.setMedia(participant, 'video', parsedMessage.value);
+            // }
+          }
+          break;
 
+        case 'receiveVideo':
+          {
+            const participant: any = this.room.participants.get(
+              parsedMessage.name
+            );
             if (participant) {
-              participant.setVideo(parsedMessage.value);
+              var video = participant.getVideoElement();
 
-              // participant.setVideo(parsedMessage.value);
-              // participant.track.srcObject.getTracks().map((t: any) => {
-              //   return t.kind == 'video' && t.stop();
-              // });
-            } else {
-              // this.setMedia(participant, 'video', parsedMessage.value);
+              var options = {
+                remoteVideo: video,
+                onicecandidate: this.onIceCandidate.bind(
+                  participant,
+                  participant
+                ),
+              };
+              participant.rtcPeer.dispose();
+              //@ts-ignore
+              participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
+                options,
+                error => {
+                  if (error) {
+                    return console.error(error);
+                  }
+                  participant.rtcPeer.generateOffer(
+                    this.offerToReceiveVideo.bind(participant, participant)
+                  );
+                }
+              );
             }
           }
           break;
@@ -201,7 +286,7 @@ class Video {
           name: config.name,
           roomName: config.roomName,
           videoEnabled: config.videoEnabled,
-          audioEnabled: config.videoEnabled,
+          audioEnabled: true,
           recording: config.recording,
         };
         this.sendMessage(message);
@@ -295,60 +380,6 @@ class Video {
     }
   }
 
-  onScreenShared(request: any) {
-    var constraints: any = {
-      audio: false,
-      video: {
-        mandatory: {
-          maxWidth: 1280,
-          maxHeight: 720,
-          maxFrameRate: 30,
-          minFrameRate: 15,
-        },
-      },
-    };
-    let name = request.name;
-    if (this.room) {
-      var participant = new Participant('_' + name, this.room);
-      var video = participant.getVideoElement();
-
-      // var videoScreen = participant.getScreenElement();
-      let video_el = this.screenShare; //
-      // docume/nt.getElementById('share-_video');
-      var options = {
-        localVideo: video,
-        videoStream: video_el.srcObject,
-        mediaConstraints: constraints,
-        onicecandidate: this.onIceCandidate.bind(participant, participant),
-      };
-
-      //@ts-ignore
-      participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
-        options,
-        error => {
-          if (error) {
-            return console.error(error);
-          }
-          // participant.rtcPeer.generateOffer(
-          //   this.offerToReceiveVideo.bind(participant, participant)
-          // );
-
-          // participant.rtcPeer.videoEnabled = true;
-          // participant.rtcPeer.audioEnabled = true;
-          // if (!this.config.videoEnabled) {
-          //   participant.rtcPeer.videoEnabled = false;
-          // }
-          // if (!this.config.audioEnabled) {
-          //   participant.rtcPeer.audioEnabled = false;
-          // }
-
-          this.room.connectParticipant(participant);
-        }
-      );
-
-      // request.data.forEach(this.onNewScreenShared);
-    }
-  }
   onNewParticipant(request: any) {
     console.log('request name new', request.name);
     this.receiveVideo(request.name);
@@ -358,14 +389,7 @@ class Video {
     console.log('request name', request.name);
     var constraints: any = {
       audio: true,
-      video: {
-        mandatory: {
-          maxWidth: 1280,
-          maxHeight: 720,
-          maxFrameRate: 30,
-          minFrameRate: 15,
-        },
-      },
+      video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
     };
     let name = request.name;
     if (this.room) {
@@ -386,14 +410,6 @@ class Video {
         // sendSource: 'desktop',
       };
 
-      // if (this.currentUser === participant) {
-      //   if (this.config.videoEnabled === false) {
-      //     options.mediaConstraints.video = false;
-      //   }
-      //   if (this.config.audioEnabled === false) {
-      //     options.mediaConstraints.audio = false;
-      //   }
-      // }
       //@ts-ignore
       participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
         options,
@@ -426,46 +442,48 @@ class Video {
   }
 
   setAudio = (value: boolean) => {
-    // if (this.currentUser) {
-    //   var msg = {
-    //     id: 'setAudio',
-    //     sender: this.currentUser.name,
-    //     value: value,
-    //     roomName: this.room.name,
-    //   };
-    //   socket.emit('message', msg);
-    // }
-
     if (this.currentUser) {
-      const participant = this.room.participants.get(this.currentUser.name);
+      const participant = this.currentUser;
       if (participant) {
         participant.setAudio(value);
+        this.config.audioEnabled = value;
+
+        // if (value) {
+        //   this.startStream(participant, 'audio');
+        // } else {
+        //   this.stopStream(participant, 'audio');
+        // }
+
+        var msg = {
+          id: 'setAudio',
+          sender: participant.name,
+          value: value,
+          roomName: this.room.name,
+        };
+        socket.emit('message', msg);
       }
     }
   };
   setVideo(value: boolean) {
-    // if (this.currentUser) {
-    //   var msg = {
-    //     id: 'setVideo',
-    //     sender: this.currentUser.name,
-    //     value: value,
-    //     roomName: this.room.name,
-    //   };
-    //   socket.emit('message', msg);
-    // }
-
     if (this.currentUser) {
-      const participant = this.room.participants.get(this.currentUser.name);
-
+      const participant = this.currentUser;
       if (participant) {
         participant.setVideo(value);
+        this.config.videoEnabled = value;
 
-        // participant.setVideo(parsedMessage.value);
-        // participant.track.srcObject.getTracks().map((t: any) => {
-        //   return t.kind == 'video' && t.stop();
-        // });
-      } else {
-        // this.setMedia(participant, 'video', parsedMessage.value);
+        if (value) {
+          this.startStream(participant, 'video');
+        } else {
+          this.stopStream(participant, 'video');
+        }
+
+        var msg = {
+          id: 'setVideo',
+          sender: participant.name,
+          value: value,
+          roomName: this.room.name,
+        };
+        socket.emit('message', msg);
       }
     }
   }
@@ -734,67 +752,70 @@ class Video {
     if (participant) this.room.removeParticipant(participant);
   }
 
-  setMedia(participant: any, k: any, value: boolean) {
-    // if (!value) {
-    //   participant.track.srcObject.getTracks().map((t: any) => {
-    //     return t.kind == k && t.stop();
-    //   });
-    // } else {
-    // if (this.currentUser === participant) {
-    participant = participant
-      ? participant
-      : new Participant(this.currentParticipantName, this.room);
+  // setMedia(participant: any, k: any, value: boolean) {
+  //   // if (!value) {
 
-    var constraints: any = {
-      audio: true,
-      video: {
-        mandatory: {
-          maxWidth: 1280,
-          maxHeight: 720,
-          maxFrameRate: 30,
-          minFrameRate: 15,
-        },
-      },
-    };
-    if (this.room) {
-      var video = participant.getVideoElement();
-      let video_el = this.screenShare; //
+  //   console.log(participant.track.srcObject.getTracks(), 'tracks here');
 
-      video.srcObject = video_el.srcObject;
-      var options = {
-        localVideo: video,
-        // videoStream: video_el.srcObject,
-        mediaConstraints: constraints,
-        onicecandidate: this.onIceCandidate.bind(participant, participant),
-        // sendSource: 'desktop',
-      };
+  //   // participant.track.srcObject.getTracks().map((t: any) => {
+  //   //   return t.kind == k && t.stop();
+  //   // });
+  //   // } else {
+  //   // if (this.currentUser === participant) {
+  //   participant = participant
+  //     ? participant
+  //     : new Participant(this.currentParticipantName, this.room);
 
-      //@ts-ignore
-      participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
-        options,
-        error => {
-          if (error) {
-            return console.error(error);
-          }
-          participant.rtcPeer.generateOffer(
-            this.offerToReceiveVideo.bind(participant, participant)
-          );
+  //   var constraints: any = {
+  //     audio: true,
+  //     video: {
+  //       mandatory: {
+  //         maxWidth: 1280,
+  //         maxHeight: 720,
+  //         maxFrameRate: 30,
+  //         minFrameRate: 15,
+  //       },
+  //     },
+  //   };
+  //   if (this.room) {
+  //     var video = participant.getVideoElement();
+  //     let video_el = this.screenShare; //
 
-          participant.rtcPeer.videoEnabled = true;
-          participant.rtcPeer.audioEnabled = true;
-          if (!this.config.videoEnabled) {
-            participant.rtcPeer.videoEnabled = false;
-          }
-          if (!this.config.audioEnabled) {
-            participant.rtcPeer.audioEnabled = false;
-          }
-          this.room.connectParticipant(participant);
-        }
-      );
-      // }
-      // }
-    }
-  }
+  //     video.srcObject = video_el.srcObject;
+  //     var options = {
+  //       localVideo: video,
+  //       // videoStream: video_el.srcObject,
+  //       mediaConstraints: constraints,
+  //       onicecandidate: this.onIceCandidate.bind(participant, participant),
+  //       // sendSource: 'desktop',
+  //     };
+
+  //     //@ts-ignore
+  //     participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
+  //       options,
+  //       error => {
+  //         if (error) {
+  //           return console.error(error);
+  //         }
+  //         participant.rtcPeer.generateOffer(
+  //           this.offerToReceiveVideo.bind(participant, participant)
+  //         );
+
+  //         participant.rtcPeer.videoEnabled = true;
+  //         participant.rtcPeer.audioEnabled = true;
+  //         if (!this.config.videoEnabled) {
+  //           participant.rtcPeer.videoEnabled = false;
+  //         }
+  //         if (!this.config.audioEnabled) {
+  //           participant.rtcPeer.audioEnabled = false;
+  //         }
+  //         // this.room.connectParticipant(participant);
+  //       }
+  //     );
+  //     // }
+  //     // }
+  //   }
+  // }
 }
 
 export default Video;

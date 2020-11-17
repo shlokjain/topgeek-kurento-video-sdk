@@ -17,9 +17,11 @@ export default class Participant extends Model {
     this.track = document.createElement('video');
     this.track.autoplay = true;
     this.track.controls = false;
-    // this.track.style.width = '100%';
+    this.track.style.width = '100%';
     const mediaStream = new MediaStream();
     this.track.srcObject = mediaStream;
+
+    this.track.style.background = 'black';
 
     // this.track.src =
     //   'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';

@@ -318,7 +318,7 @@ class App extends React.Component<any, any> {
       // name: `Suraj`,
       roomName: 'new',
       videoEnabled: true,
-      audioEnabled: true,
+      audioEnabled: false,
       recording: true,
     })
       .then(async (room: any) => {
@@ -484,6 +484,24 @@ class App extends React.Component<any, any> {
         >
           stop video
         </button>
+
+        <button
+          onClick={() => {
+            // this.recognition.start();
+            // this.start('video');
+            VideoSDK.setAudio(true);
+          }}
+        >
+          start audio
+        </button>
+        <button
+          onClick={() => {
+            VideoSDK.setAudio(false);
+          }}
+        >
+          stop audio
+        </button>
+
         <button
           onClick={() => {
             console.log('speech ::: start here', 'participants here');
