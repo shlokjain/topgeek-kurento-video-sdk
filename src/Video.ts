@@ -43,6 +43,8 @@ class Video {
     var video = participant.getVideoElement();
 
     console.log(this.config.audioEnabled, 'enabled aud');
+    let video_el = this.screenShare;
+
     var options = {
       localVideo: video,
       // videoStream: video_el.srcObject,
@@ -50,7 +52,11 @@ class Video {
         video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
         audio: true,
       },
-      onicecandidate: this.onIceCandidate.bind(participant, participant),
+      onicecandidate: this.onIceCandidate.bind(
+        participant,
+        participant,
+        this.currentParticipantName
+      ),
     };
     participant.rtcPeer.dispose();
     //@ts-ignore
@@ -61,7 +67,11 @@ class Video {
           return console.error(error);
         }
         participant.rtcPeer.generateOffer(
-          this.offerToReceiveVideo.bind(participant, participant)
+          this.offerToReceiveVideo.bind(
+            participant,
+            participant,
+            this.currentParticipantName
+          )
         );
 
         participant.rtcPeer.audioEnabled = true;
@@ -126,8 +136,8 @@ class Video {
           break;
 
         case 'newScreenShared':
-          console.log(parsedMessage.id, '@@@@', parsedMessage);
-          this.onNewScreenShared(parsedMessage);
+          // console.log(parsedMessage.id, '@@@@', parsedMessage);
+          // this.onNewScreenShared(parsedMessage);
           break;
         case 'screenShared':
           console.log(parsedMessage.id, '@@@@', parsedMessage);
@@ -242,7 +252,8 @@ class Video {
                 remoteVideo: video,
                 onicecandidate: this.onIceCandidate.bind(
                   participant,
-                  participant
+                  participant,
+                  this.currentParticipantName
                 ),
               };
               participant.rtcPeer.dispose();
@@ -254,7 +265,11 @@ class Video {
                     return console.error(error);
                   }
                   participant.rtcPeer.generateOffer(
-                    this.offerToReceiveVideo.bind(participant, participant)
+                    this.offerToReceiveVideo.bind(
+                      participant,
+                      participant,
+                      this.currentUser
+                    )
                   );
                 }
               );
@@ -301,11 +316,20 @@ class Video {
     });
   }
 
-  offerToReceiveVideo(participant: any, error: any, offerSdp: any, wp: any) {
-    console.log(participant, 'participant here');
+  offerToReceiveVideo(
+    participant: any,
+    currentUser: any,
+    error: any,
+    offerSdp: any,
+    wp: any
+  ) {
     if (error) return console.error('sdp offer error');
+
+    console.log(currentUser, 'participant here');
+
     var msg = {
       id: 'receiveVideoFrom',
+      user: currentUser,
       sender: participant.name,
       sdpOffer: offerSdp,
     };
@@ -321,10 +345,16 @@ class Video {
     socket.emit('message', msg);
   }
 
-  onIceCandidate = (participant: any, candidate: any, wp: any) => {
+  onIceCandidate = (
+    participant: any,
+    currentUser: any,
+    candidate: any,
+    wp: any
+  ) => {
     console.log('hello here on new sceen 2222');
     var message = {
       id: 'onIceCandidate',
+      user: currentUser,
       candidate: candidate,
       sender: participant.name,
     };
@@ -353,32 +383,36 @@ class Video {
     }
   }
 
-  onNewScreenShared(request: any) {
-    var participant = new Participant('Screen-' + request.name, this.room);
+  // onNewScreenShared(request: any) {
+  //   var participant = new Participant('Screen-' + request.name, this.room);
 
-    if (this.room) {
-      var video = participant.getVideoElement();
-      var options = {
-        remoteVideo: video,
-        onicecandidate: this.onIceCandidate.bind(participant, participant),
-      };
+  //   if (this.room) {
+  //     var video = participant.getVideoElement();
+  //     var options = {
+  //       remoteVideo: video,
+  //       onicecandidate: this.onIceCandidate.bind(participant, participant),
+  //     };
 
-      console.log('hello here on new sceen');
-      //@ts-ignore
-      participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
-        options,
-        error => {
-          if (error) {
-            return console.error(error);
-          }
-          participant.rtcPeer.generateOffer(
-            this.offerToReceiveVideo.bind(participant, participant)
-          );
-          this.room.connectParticipant(participant);
-        }
-      );
-    }
-  }
+  //     console.log('hello here on new sceen');
+  //     //@ts-ignore
+  //     participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
+  //       options,
+  //       error => {
+  //         if (error) {
+  //           return console.error(error);
+  //         }
+  //         participant.rtcPeer.generateOffer(
+  //           this.offerToReceiveVideo.bind(
+  //             participant,
+  //             participant,
+  //             this.currentParticipantName
+  //           )
+  //         );
+  //         this.room.connectParticipant(participant);
+  //       }
+  //     );
+  //   }
+  // }
 
   onNewParticipant(request: any) {
     console.log('request name new', request.name);
@@ -400,13 +434,22 @@ class Video {
       let video_el = this.screenShare; //
       // docume/nt.getElementById('share-_video');
 
+      let isScreen = false;
+      if (participant.name.startsWith('Screen-')) {
+        isScreen = true;
+      }
+
       var video = participant.getVideoElement();
       video.srcObject = video_el.srcObject;
       var options = {
         localVideo: video,
         videoStream: video_el.srcObject,
         mediaConstraints: constraints,
-        onicecandidate: this.onIceCandidate.bind(participant, participant),
+        onicecandidate: this.onIceCandidate.bind(
+          participant,
+          participant,
+          participant.name
+        ),
         // sendSource: 'desktop',
       };
 
@@ -417,8 +460,13 @@ class Video {
           if (error) {
             return console.error(error);
           }
+
           participant.rtcPeer.generateOffer(
-            this.offerToReceiveVideo.bind(participant, participant)
+            this.offerToReceiveVideo.bind(
+              participant,
+              participant,
+              participant.name
+            )
           );
 
           if (!name.startsWith('Screen-')) {
@@ -712,12 +760,17 @@ class Video {
   receiveVideo = (name: any) => {
     var participant = new Participant(name, this.room);
 
+    console.log('receive video', name, this.currentParticipantName);
     if (this.room) {
       var video = participant.getVideoElement();
 
       var options = {
         remoteVideo: video,
-        onicecandidate: this.onIceCandidate.bind(participant, participant),
+        onicecandidate: this.onIceCandidate.bind(
+          participant,
+          participant,
+          this.currentParticipantName
+        ),
       };
       //@ts-ignore
       participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
@@ -727,7 +780,11 @@ class Video {
             return console.error(error);
           }
           participant.rtcPeer.generateOffer(
-            this.offerToReceiveVideo.bind(participant, participant)
+            this.offerToReceiveVideo.bind(
+              participant,
+              participant,
+              this.currentParticipantName
+            )
           );
 
           if (isNil(participant.rtcPeer.audioEnabled)) {
