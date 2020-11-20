@@ -316,7 +316,7 @@ class App extends React.Component<any, any> {
       url: 'https://localhost/',
       name: `Suraj` + Math.floor(Math.random() * 100),
       // name: `Suraj`,
-      roomName: 'new',
+      roomName: 'room-3',
       videoEnabled: true,
       audioEnabled: false,
       recording: true,

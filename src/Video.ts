@@ -5,12 +5,15 @@ import Participant from './Participant';
 import { find, isNil } from 'lodash';
 
 const DEFAULT_VIDEO_CONSTRAINT = {
-  mandatory: {
-    maxWidth: 1280,
-    maxHeight: 720,
-    maxFrameRate: 30,
-    minFrameRate: 15,
-  },
+  width: { min: 1024, ideal: 1280, max: 1280 },
+  height: { min: 576, ideal: 720, max: 720 },
+
+  // mandatory: {
+  //   maxWidth: 1280,
+  //   maxHeight: 720,
+  //   maxFrameRate: 30,
+  //   minFrameRate: 15,
+  // },
 };
 var socket: any;
 
