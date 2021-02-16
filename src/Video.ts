@@ -425,15 +425,16 @@ class Video {
   addListenerForScreen(participant: any) {
     if (participant && this.isScreen(participant.name)) {
       const screenTrack = participant.track.srcObject.getTracks();
-      screenTrack[0].onended = function() {
-        if (this.currentUser) {
-          this.currentUser.setScreenSharing(false);
-          this.room.emit('isScreenShared', {
-            user: this.currentUser,
-            value: false,
-          });
-        }
-      };
+      if (this.currentParticipantName) {
+        var message = {
+          id: 'stopScreenSharing',
+          name: this.currentParticipantName,
+          roomName: this.room.name,
+        };
+        screenTrack[0].onended = function() {
+          socket.emit('message', message);
+        };
+      }
     }
   }
 
