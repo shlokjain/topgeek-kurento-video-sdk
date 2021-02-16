@@ -422,6 +422,28 @@ class Video {
     this.receiveVideo(request.name);
   }
 
+  addListenerForScreen(participant: any) {
+    if (participant && this.isScreen(participant.name)) {
+      const screenTrack = participant.track.srcObject.getTracks();
+      screenTrack[0].onended = function() {
+        if (this.currentUser) {
+          this.currentUser.setScreenSharing(false);
+          this.room.emit('isScreenShared', {
+            user: this.currentUser,
+            value: false,
+          });
+        }
+      };
+    }
+  }
+
+  isScreen(participantName: any) {
+    if (participantName.startsWith('Screen-')) {
+      return true;
+    }
+    return false;
+  }
+
   onExistingParticipants(request: any) {
     console.log('request name', request.name);
     var constraints: any = {
@@ -484,6 +506,7 @@ class Video {
           }
 
           this.room.connectParticipant(participant);
+          this.addListenerForScreen(participant);
         }
       );
       request.data.forEach(this.receiveVideo);
