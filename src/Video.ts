@@ -764,6 +764,21 @@ class Video {
     navigator.mediaDevices['getDisplayMedia'](displayMediaOptions)
       .then((stream: any, data: any) => {
         console.log(stream, data, 'all here');
+        if (stream.getVideoTracks()[0] && stream.getVideoTracks()[0].label) {
+          if (stream.getVideoTracks()[0].label.startsWith('screen')) {
+            console.log(
+              'CORRECT Screen share',
+              stream.getVideoTracks()[0].label
+            );
+          } else {
+            console.log(
+              'INCORRECT Screen share',
+              stream.getVideoTracks()[0].label
+            );
+            stream.getVideoTracks()[0].stop();
+            return;
+          }
+        }
         const participant = this.room.participants.get(
           this.currentParticipantName
         );
