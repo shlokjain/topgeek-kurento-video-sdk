@@ -309,7 +309,11 @@ class App extends React.Component<any, any> {
   };
 
   componentDidMount() {
-    console.log(VideoSDK);
+    VideoSDK.on('devicesConnected', () => {
+      console.log(VideoSDK.getAudioOutputDevices(), 'audio output devices @@@');
+      console.log(VideoSDK.getAudioInputDevices(), 'audio output devices @@@');
+      console.log(VideoSDK.getVideoInputDevices(), 'audio output devices @@@');
+    });
 
     VideoSDK.connect(`ttg-socket-server-token`, {
       // url: 'https://176.9.72.40:3000/',
@@ -422,6 +426,26 @@ class App extends React.Component<any, any> {
         console.log(Error);
       });
   }
+
+  changeAudioDestination = (deviceId: string) => {
+    // const deviceId = event.target.value;
+    // const outputSelector = event.target;
+    // // FIXME: Make the media element lookup dynamic.
+    // const element = event.path[2].childNodes[1];
+    // // attachSinkId(element, deviceId, outputSelector);
+
+    console.log(deviceId, 'input/output');
+
+    const element = document.getElementById('sample-video');
+
+    if (element) {
+      //@ts-ignore
+      element.setSinkId(deviceId).then(function() {
+        console.log('hello here');
+      });
+    }
+  };
+
   render() {
     return (
       <div>
@@ -515,6 +539,50 @@ class App extends React.Component<any, any> {
         >
           start
         </button>
+
+        {/* <Grid templateColumns="repeat(3, 1fr)" mt="5" gap={6}>
+          <Box>
+            <Text fontSize="xs" mb="1">
+              Microphone
+            </Text>
+            <Select
+              size="sm"
+              id="audioSource"
+              value={microphone}
+              onChange={e => {
+                setMicrophone(e.target.value);
+              }}
+              isDisabled={!audioEnabled}
+            />
+          </Box>
+          <Box>
+            <Text fontSize="xs" mb="1">
+              Speaker
+            </Text>
+            <Select
+              size="sm"
+              id="audioOutput"
+              value={speaker}
+              onChange={e => {
+                setSpeaker(e.target.value);
+              }}
+            />
+          </Box>
+          <Box>
+            <Text fontSize="xs" mb="1">
+              Camera
+            </Text>
+            <Select
+              size="sm"
+              id="videoSource"
+              value={camera}
+              onChange={e => {
+                setCamera(e.target.value);
+              }}
+            />
+          </Box>
+        </Grid> */}
+
         {/* <button
           onClick={() => {
             console.log('speech ::: start here', 'participants here');
@@ -539,6 +607,14 @@ class App extends React.Component<any, any> {
         <div id="subtitle">{this.state.caption}</div>
         {/* <textarea id="maintext" rows={5} cols={50} /> */}
 
+        <video
+          id="sample-video"
+          // autoplay="autoplay"
+          width="400"
+          controls
+          src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
+        ></video>
+
         <button
           onClick={() => {
             // this.recognition.start();
@@ -546,6 +622,38 @@ class App extends React.Component<any, any> {
           }}
         >
           play remote video
+        </button>
+        <button
+          onClick={() => {
+            // this.recognition.start();
+            // this.changeAudioDestination('default');
+            VideoSDK.selectAudioOutputDevice('default');
+          }}
+        >
+          change default
+        </button>
+
+        <button
+          onClick={() => {
+            // this.recognition.start();
+            this.changeAudioDestination(
+              '5c2b50d53527d68b3aac0d25531dd0ee1f687919ad8c5471a9a723f01229e281'
+            );
+          }}
+        >
+          change audio des
+          (256e7cd9a691aa734b65be8e594bf530605f9e592e93bbde114b5ffb6d6f87f3)
+        </button>
+
+        <button
+          onClick={() => {
+            // this.recognition.start();
+            VideoSDK.selectAudioInputDevice('default');
+
+            // this.changeAudioDestination('default');
+          }}
+        >
+          change audio input
         </button>
       </div>
     );

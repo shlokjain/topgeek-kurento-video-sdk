@@ -2,7 +2,8 @@ import Room from './Room';
 import socketIOClient from 'socket.io-client';
 import kurentoUtils from 'kurento-utils';
 import Participant from './Participant';
-import { find, isNil } from 'lodash';
+import { find, forEach, isNil, map } from 'lodash';
+import Model from './Model';
 
 const DEFAULT_VIDEO_CONSTRAINT = {
   width: { min: 1024, ideal: 1280, max: 1280 },
@@ -17,11 +18,12 @@ const DEFAULT_VIDEO_CONSTRAINT = {
 };
 var socket: any;
 
-class Video {
+class Video extends Model {
   socket: any;
   room: Room;
   screenShare: any;
   currentParticipantName: string;
+  devices: Array<any> = [];
   config: {
     url: string;
     name: string;
@@ -29,23 +31,105 @@ class Video {
     videoEnabled: boolean;
     audioEnabled: boolean;
   };
+  private audioInputs: any = [];
+  private videoInputs: any = [];
+  private audioOutputs: any = [];
+  private audioSource: any = true;
+  private videoSource: any = true;
+
+  private selectedAudioOutputDevice: any;
 
   constructor() {
     //
+    super();
     this.screenShare = document.createElement('video');
     this.screenShare.id = 'screenShare';
     this.screenShare.autoplay = true;
     this.screenShare.controls = false;
     this.screenShare.srcObject = null;
+
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      for (let i = 0; i !== devices.length; ++i) {
+        const deviceInfo = devices[i];
+        const option = document.createElement('option');
+        option.value = deviceInfo.deviceId;
+        if (deviceInfo.kind === 'audioinput') {
+          this.audioInputs.push(deviceInfo);
+        } else if (deviceInfo.kind === 'audiooutput') {
+          // audioOutputSelect.appendChild(option);
+          this.audioOutputs.push(deviceInfo);
+        } else if (deviceInfo.kind === 'videoinput') {
+          this.videoInputs.push(deviceInfo);
+        } else {
+          console.log('Some other kind of source/device: ', deviceInfo);
+        }
+      }
+
+      this.emit('devicesConnected', devices);
+    });
   }
+
   sendMessage = (message: any) => {
     socket.emit('message', message);
   };
 
-  startStream = (participant: any, stream: 'audio' | 'video') => {
+  getAudioOutputDevices = () => {
+    //
+    return this.audioOutputs;
+  };
+
+  getAudioInputDevices = () => {
+    //
+    return this.audioInputs;
+  };
+
+  getVideoInputDevices = () => {
+    //
+    return this.videoInputs;
+  };
+
+  selectAudioInputDevice = (deviceId: string) => {
+    //
+    // const participants = this.room.participants;
+    // forEach(participants, (participant: Participant) => {
+    //   console.log(participant, 'participant');
+    // });
+
+    console.log();
+    this.audioSource = deviceId;
+
+    const participant = this.currentUser;
+    this.startStream(participant);
+  };
+  selectVideoInputDevice = (deviceId: string) => {
+    //
+  };
+  selectAudioOutputDevice = (deviceId: string) => {
+    //
+
+    const participants = this.room.participants;
+
+    console.log(participants, 'participants');
+    participants.forEach((participant: Participant) => {
+      console.log(participant, deviceId, 'participant');
+      participant.track.setSinkId(deviceId).then(function() {
+        console.log('hello here');
+      });
+    });
+
+    // this.selectedAudioOutputDevice = deviceId;
+    // const element = document.getElementById('sample-video');
+    // if (element) {
+    //   //@ts-ignore
+    //   element.setSinkId(deviceId).then(function() {
+    //     console.log('hello here');
+    //   });
+    // }
+  };
+  startStream = (participant: any) => {
     var video = participant.getVideoElement();
 
-    console.log(this.config.audioEnabled, 'enabled aud');
+    console.log(this.config.audioEnabled, this.audioSource, 'enabled aud');
     let video_el = this.screenShare;
 
     var options = {
@@ -54,6 +138,38 @@ class Video {
       mediaConstraints: {
         video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
         audio: true,
+        // audio: {
+        //   deviceId: this.audioSource ? { exact: this.audioSource } : undefined,
+        // },
+        // video: {
+        //   deviceId: this.videoSource ? { exact: this.videoSource } : undefined,
+        // },
+
+        // audio: {
+        //   mandatory: {},
+        //   optional: [
+        //     {
+        //       sourceId: this.audioSource
+        //         ? { exact: this.audioSource }
+        //         : undefined,
+        //     },
+        //   ],
+        // },
+        // video: {
+        //   mandatory: {
+        //     maxWidth: 1280,
+        //     maxHeight: 720,
+        //     maxFrameRate: 30,
+        //     minFrameRate: 15,
+        //   },
+        //   // optional: [
+        //   //   {
+        //   //     sourceId: this.videoSource
+        //   //       ? { exact: this.videoSource }
+        //   //       : undefined,
+        //   //   },
+        //   // ],
+        // },
       },
       onicecandidate: this.onIceCandidate.bind(
         participant,
@@ -547,7 +663,7 @@ class Video {
         this.config.videoEnabled = value;
 
         if (value) {
-          this.startStream(participant, 'video');
+          this.startStream(participant);
         } else {
           this.stopStream(participant, 'video');
         }
