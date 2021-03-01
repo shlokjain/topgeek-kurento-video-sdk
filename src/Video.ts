@@ -88,7 +88,7 @@ class Video extends Model {
     return this.videoInputs;
   };
 
-  selectAudioInputDevice = (deviceId: string) => {
+  selectAudioInputDevice = (device: any) => {
     //
     // const participants = this.room.participants;
     // forEach(participants, (participant: Participant) => {
@@ -96,27 +96,40 @@ class Video extends Model {
     // });
 
     console.log();
-    this.audioSource = deviceId;
+    this.audioSource = device.deviceId;
 
     const participant = this.currentUser;
-    this.startStream(participant);
+    this.stopStream(participant, 'audio');
+    this.stopStream(participant, 'video');
+    // .then(resp => {
+    setTimeout(() => {
+      this.startStream(participant);
+    }, 10000);
+    // })
   };
   selectVideoInputDevice = (deviceId: string) => {
     //
   };
-  selectAudioOutputDevice = (deviceId: string) => {
+  selectAudioOutputDevice = (device: any) => {
     //
 
-    const participants = this.room.participants;
+    if (this.room) {
+      const participants = this.room.participants;
 
-    console.log(participants, 'participants');
-    participants.forEach((participant: Participant) => {
-      console.log(participant, deviceId, 'participant');
-      participant.track.setSinkId(deviceId).then(function() {
-        console.log('hello here');
+      console.log(participants, 'participants');
+      console.log(device.deviceId, 'device.deviceId');
+      participants.forEach((participant: Participant) => {
+        console.log(participant, device.deviceId, 'participant');
+        participant.track
+          .setSinkId(device.deviceId)
+          .then(function() {
+            console.log('hello here');
+          })
+          .catch((error: any) => {
+            console.log(error, 'error here');
+          });
       });
-    });
-
+    }
     // this.selectedAudioOutputDevice = deviceId;
     // const element = document.getElementById('sample-video');
     // if (element) {
@@ -137,10 +150,16 @@ class Video extends Model {
       // videoStream: video_el.srcObject,
       mediaConstraints: {
         video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
-        audio: true,
+        // audio: true,
         // audio: {
-        //   deviceId: this.audioSource ? { exact: this.audioSource } : undefined,
+        //   deviceId: {
+        //     exact:
+        //       '545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e',
+        //   },
         // },
+        audio: {
+          deviceId: this.audioSource ? { exact: this.audioSource } : undefined,
+        },
         // video: {
         //   deviceId: this.videoSource ? { exact: this.videoSource } : undefined,
         // },
@@ -177,6 +196,8 @@ class Video extends Model {
         this.currentParticipantName
       ),
     };
+    console.log(options, 'enabled aud options');
+
     participant.rtcPeer.dispose();
     //@ts-ignore
     participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
@@ -193,6 +214,7 @@ class Video extends Model {
           )
         );
 
+        participant.rtcPeer.videoEnabled = true;
         participant.rtcPeer.audioEnabled = true;
 
         if (!this.config.audioEnabled) {
@@ -200,6 +222,7 @@ class Video extends Model {
         }
       }
     );
+    console.log(participant.rtcPeer, 'enabled aud rtcPeer');
   };
 
   stopStream = (participant: any, stream: 'audio' | 'video') => {
@@ -246,7 +269,7 @@ class Video extends Model {
       console.log(parsedMessage, 'message');
       switch (parsedMessage.id) {
         case 'existingParticipants':
-          console.log(parsedMessage.id, '*****', parsedMessage.name);
+          console.log(parsedMessage.id, '*****', parsedMessage);
           this.onExistingParticipants(parsedMessage);
           break;
 

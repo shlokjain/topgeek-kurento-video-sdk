@@ -31,6 +31,7 @@ class App extends React.Component<any, any> {
 
     this.state = {
       caption: '',
+      devicesConnected: false,
     };
     // this.recognition = new webkitSpeechRecognition();
 
@@ -310,10 +311,14 @@ class App extends React.Component<any, any> {
 
   componentDidMount() {
     VideoSDK.on('devicesConnected', () => {
+      this.setState({
+        devicesConnected: true,
+      });
       console.log(VideoSDK.getAudioOutputDevices(), 'audio output devices @@@');
       console.log(VideoSDK.getAudioInputDevices(), 'audio output devices @@@');
       console.log(VideoSDK.getVideoInputDevices(), 'audio output devices @@@');
     });
+    // document.getElementById('sample-video').play();
 
     VideoSDK.connect(`ttg-socket-server-token`, {
       // url: 'https://176.9.72.40:3000/',
@@ -607,13 +612,13 @@ class App extends React.Component<any, any> {
         <div id="subtitle">{this.state.caption}</div>
         {/* <textarea id="maintext" rows={5} cols={50} /> */}
 
-        <video
+        {/* <video
           id="sample-video"
           // autoplay="autoplay"
           width="400"
           controls
           src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
-        ></video>
+        ></video> */}
 
         <button
           onClick={() => {
@@ -623,7 +628,7 @@ class App extends React.Component<any, any> {
         >
           play remote video
         </button>
-        <button
+        {/* <button
           onClick={() => {
             // this.recognition.start();
             // this.changeAudioDestination('default');
@@ -631,30 +636,69 @@ class App extends React.Component<any, any> {
           }}
         >
           change default
-        </button>
+        </button> */}
 
-        <button
+        {VideoSDK.getAudioOutputDevices().map(element => {
+          return (
+            <button
+              style={{ margin: 5 }}
+              onClick={() => {
+                VideoSDK.selectAudioOutputDevice(element);
+              }}
+            >
+              change audio des - {element.label}
+            </button>
+          );
+        })}
+
+        {VideoSDK.getAudioInputDevices().map(element => {
+          return (
+            <button
+              style={{ margin: 5 }}
+              onClick={() => {
+                VideoSDK.selectAudioInputDevice(element);
+              }}
+            >
+              change audio input - {element.label} - {element.deviceId}
+            </button>
+          );
+        })}
+
+        {/* <button
           onClick={() => {
             // this.recognition.start();
-            this.changeAudioDestination(
-              '5c2b50d53527d68b3aac0d25531dd0ee1f687919ad8c5471a9a723f01229e281'
+            VideoSDK.selectAudioOutputDevice(
+              'bd0cd91e87ed9656c6365394db3060aa56cbf77f5fe142d3385c6729c661c807'
             );
+            // this.changeAudioDestination(
+            //   'bd0cd91e87ed9656c6365394db3060aa56cbf77f5fe142d3385c6729c661c807'
+            // );
           }}
         >
           change audio des
-          (256e7cd9a691aa734b65be8e594bf530605f9e592e93bbde114b5ffb6d6f87f3)
-        </button>
+          bd0cd91e87ed9656c6365394db3060aa56cbf77f5fe142d3385c6729c661c807
+          {VideoSDK.getAudioOutputDevices()[
+            VideoSDK.getAudioOutputDevices().length - 1
+          ]
+            ? VideoSDK.getAudioOutputDevices()[
+                VideoSDK.getAudioOutputDevices().length - 1
+              ].deviceId
+            : ''}
+        </button> */}
 
-        <button
+        {/* <button
           onClick={() => {
             // this.recognition.start();
-            VideoSDK.selectAudioInputDevice('default');
+            VideoSDK.selectAudioInputDevice(
+              '545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e'
+            );
 
             // this.changeAudioDestination('default');
           }}
         >
           change audio input
-        </button>
+          545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e
+        </button> */}
       </div>
     );
   }
