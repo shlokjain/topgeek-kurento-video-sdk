@@ -31,6 +31,7 @@ class App extends React.Component<any, any> {
 
     this.state = {
       caption: '',
+      devicesConnected: false,
     };
     // this.recognition = new webkitSpeechRecognition();
 
@@ -309,7 +310,15 @@ class App extends React.Component<any, any> {
   };
 
   componentDidMount() {
-    console.log(VideoSDK);
+    VideoSDK.on('devicesConnected', () => {
+      this.setState({
+        devicesConnected: true,
+      });
+      console.log(VideoSDK.getAudioOutputDevices(), 'audio output devices @@@');
+      console.log(VideoSDK.getAudioInputDevices(), 'audio output devices @@@');
+      console.log(VideoSDK.getVideoInputDevices(), 'audio output devices @@@');
+    });
+    // document.getElementById('sample-video').play();
 
     VideoSDK.connect(`ttg-socket-server-token`, {
       // url: 'https://176.9.72.40:3000/',
@@ -422,6 +431,26 @@ class App extends React.Component<any, any> {
         console.log(Error);
       });
   }
+
+  changeAudioDestination = (deviceId: string) => {
+    // const deviceId = event.target.value;
+    // const outputSelector = event.target;
+    // // FIXME: Make the media element lookup dynamic.
+    // const element = event.path[2].childNodes[1];
+    // // attachSinkId(element, deviceId, outputSelector);
+
+    console.log(deviceId, 'input/output');
+
+    const element = document.getElementById('sample-video');
+
+    if (element) {
+      //@ts-ignore
+      element.setSinkId(deviceId).then(function() {
+        console.log('hello here');
+      });
+    }
+  };
+
   render() {
     return (
       <div>
@@ -515,6 +544,50 @@ class App extends React.Component<any, any> {
         >
           start
         </button>
+
+        {/* <Grid templateColumns="repeat(3, 1fr)" mt="5" gap={6}>
+          <Box>
+            <Text fontSize="xs" mb="1">
+              Microphone
+            </Text>
+            <Select
+              size="sm"
+              id="audioSource"
+              value={microphone}
+              onChange={e => {
+                setMicrophone(e.target.value);
+              }}
+              isDisabled={!audioEnabled}
+            />
+          </Box>
+          <Box>
+            <Text fontSize="xs" mb="1">
+              Speaker
+            </Text>
+            <Select
+              size="sm"
+              id="audioOutput"
+              value={speaker}
+              onChange={e => {
+                setSpeaker(e.target.value);
+              }}
+            />
+          </Box>
+          <Box>
+            <Text fontSize="xs" mb="1">
+              Camera
+            </Text>
+            <Select
+              size="sm"
+              id="videoSource"
+              value={camera}
+              onChange={e => {
+                setCamera(e.target.value);
+              }}
+            />
+          </Box>
+        </Grid> */}
+
         {/* <button
           onClick={() => {
             console.log('speech ::: start here', 'participants here');
@@ -539,6 +612,14 @@ class App extends React.Component<any, any> {
         <div id="subtitle">{this.state.caption}</div>
         {/* <textarea id="maintext" rows={5} cols={50} /> */}
 
+        {/* <video
+          id="sample-video"
+          // autoplay="autoplay"
+          width="400"
+          controls
+          src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
+        ></video> */}
+
         <button
           onClick={() => {
             // this.recognition.start();
@@ -547,6 +628,77 @@ class App extends React.Component<any, any> {
         >
           play remote video
         </button>
+        {/* <button
+          onClick={() => {
+            // this.recognition.start();
+            // this.changeAudioDestination('default');
+            VideoSDK.selectAudioOutputDevice('default');
+          }}
+        >
+          change default
+        </button> */}
+
+        {VideoSDK.getAudioOutputDevices().map(element => {
+          return (
+            <button
+              style={{ margin: 5 }}
+              onClick={() => {
+                VideoSDK.selectAudioOutputDevice(element);
+              }}
+            >
+              change audio des - {element.label}
+            </button>
+          );
+        })}
+
+        {VideoSDK.getAudioInputDevices().map(element => {
+          return (
+            <button
+              style={{ margin: 5 }}
+              onClick={() => {
+                VideoSDK.selectAudioInputDevice(element);
+              }}
+            >
+              change audio input - {element.label} - {element.deviceId}
+            </button>
+          );
+        })}
+
+        {/* <button
+          onClick={() => {
+            // this.recognition.start();
+            VideoSDK.selectAudioOutputDevice(
+              'bd0cd91e87ed9656c6365394db3060aa56cbf77f5fe142d3385c6729c661c807'
+            );
+            // this.changeAudioDestination(
+            //   'bd0cd91e87ed9656c6365394db3060aa56cbf77f5fe142d3385c6729c661c807'
+            // );
+          }}
+        >
+          change audio des
+          bd0cd91e87ed9656c6365394db3060aa56cbf77f5fe142d3385c6729c661c807
+          {VideoSDK.getAudioOutputDevices()[
+            VideoSDK.getAudioOutputDevices().length - 1
+          ]
+            ? VideoSDK.getAudioOutputDevices()[
+                VideoSDK.getAudioOutputDevices().length - 1
+              ].deviceId
+            : ''}
+        </button> */}
+
+        {/* <button
+          onClick={() => {
+            // this.recognition.start();
+            VideoSDK.selectAudioInputDevice(
+              '545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e'
+            );
+
+            // this.changeAudioDestination('default');
+          }}
+        >
+          change audio input
+          545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e
+        </button> */}
       </div>
     );
   }

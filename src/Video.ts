@@ -2,7 +2,8 @@ import Room from './Room';
 import socketIOClient from 'socket.io-client';
 import kurentoUtils from 'kurento-utils';
 import Participant from './Participant';
-import { find, isNil } from 'lodash';
+import { find, forEach, isNil, map } from 'lodash';
+import Model from './Model';
 
 const DEFAULT_VIDEO_CONSTRAINT = {
   width: { min: 1024, ideal: 1280, max: 1280 },
@@ -17,11 +18,12 @@ const DEFAULT_VIDEO_CONSTRAINT = {
 };
 var socket: any;
 
-class Video {
+class Video extends Model {
   socket: any;
   room: Room;
   screenShare: any;
   currentParticipantName: string;
+  devices: Array<any> = [];
   config: {
     url: string;
     name: string;
@@ -29,23 +31,143 @@ class Video {
     videoEnabled: boolean;
     audioEnabled: boolean;
   };
+  private audioInputs: any = [];
+  private videoInputs: any = [];
+  private audioOutputs: any = [];
+  private audioSource: any = true;
+  private videoSource: any = true;
+
+  private selectedAudioOutputDevice: any;
 
   constructor() {
     //
+    super();
     this.screenShare = document.createElement('video');
     this.screenShare.id = 'screenShare';
     this.screenShare.autoplay = true;
     this.screenShare.controls = false;
     this.screenShare.srcObject = null;
+
+    navigator.mediaDevices.enumerateDevices().then(devices => {
+      for (let i = 0; i !== devices.length; ++i) {
+        const deviceInfo = devices[i];
+        const option = document.createElement('option');
+        option.value = deviceInfo.deviceId;
+        if (deviceInfo.kind === 'audioinput') {
+          this.audioInputs.push(deviceInfo);
+        } else if (deviceInfo.kind === 'audiooutput') {
+          // audioOutputSelect.appendChild(option);
+          this.audioOutputs.push(deviceInfo);
+        } else if (deviceInfo.kind === 'videoinput') {
+          this.videoInputs.push(deviceInfo);
+        } else {
+          console.log('Some other kind of source/device: ', deviceInfo);
+        }
+      }
+
+      this.emit('devicesConnected', devices);
+    });
   }
+
   sendMessage = (message: any) => {
     socket.emit('message', message);
   };
 
-  startStream = (participant: any, stream: 'audio' | 'video') => {
+  getAudioOutputDevices = () => {
+    //
+    return this.audioOutputs;
+  };
+
+  getAudioInputDevices = () => {
+    //
+    return this.audioInputs;
+  };
+
+  getVideoInputDevices = () => {
+    //
+    return this.videoInputs;
+  };
+
+  selectAudioInputDevice = (device: any) => {
+    //
+    // const participants = this.room.participants;
+    // forEach(participants, (participant: Participant) => {
+    //   console.log(participant, 'participant');
+    // });
+
+    console.log();
+    this.audioSource = device.deviceId;
+
+    const participant = this.currentUser;
+
+    if (!participant) {
+      return;
+    }
+
+    this.setVideo(false);
+    this.setVideo(true);
+
+    // // this.stopStream(participant, 'audio');
+    // this.stopStream(participant, 'video');
+
+    // var msg = {
+    //   id: 'setVideo',
+    //   sender: participant.name,
+    //   value: false,
+    //   roomName: this.room.name,
+    // };
+    // socket.emit('message', msg);
+
+    // // // // .then(resp => {
+    // setTimeout(() => {
+    //   this.startStream(participant);
+
+    //   // var msg = {
+    //   //   id: 'setVideo',
+    //   //   sender: participant.name,
+    //   //   value: false,
+    //   //   roomName: this.room.name,
+    //   // };
+    //   // socket.emit('message', msg);
+    // }, 5000);
+    // })
+  };
+  selectVideoInputDevice = (deviceId: string) => {
+    //
+  };
+  selectAudioOutputDevice = (device: any) => {
+    //
+
+    if (this.room) {
+      const participants = this.room.participants;
+
+      console.log(participants, 'participants');
+      console.log(device.deviceId, 'device.deviceId');
+      participants.forEach((participant: Participant) => {
+        console.log(participant, device.deviceId, 'participant');
+        participant.track
+          .setSinkId(device.deviceId)
+          .then(function() {
+            console.log('hello here');
+          })
+          .catch((error: any) => {
+            console.log(error, 'error here');
+          });
+      });
+    }
+    // this.selectedAudioOutputDevice = deviceId;
+    // const element = document.getElementById('sample-video');
+    // if (element) {
+    //   //@ts-ignore
+    //   element.setSinkId(deviceId).then(function() {
+    //     console.log('hello here');
+    //   });
+    // }
+  };
+  startStream = (participant: any) => {
     var video = participant.getVideoElement();
 
-    console.log(this.config.audioEnabled, 'enabled aud');
+    console.log(this.config.audioEnabled, this.audioSource, 'enabled aud');
     let video_el = this.screenShare;
 
     var options = {
@@ -54,6 +176,44 @@ class Video {
       mediaConstraints: {
         video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
         audio: true,
+        // audio: {
+        //   deviceId: {
+        //     exact:
+        //       '545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e',
+        //   },
+        // },
+        // audio: {
+        //   deviceId: this.audioSource ? { exact: this.audioSource } : undefined,
+        // },
+        // video: {
+        //   deviceId: this.videoSource ? { exact: this.videoSource } : undefined,
+        // },
+
+        // audio: {
+        //   mandatory: {},
+        //   optional: [
+        //     {
+        //       sourceId: this.audioSource
+        //         ? { exact: this.audioSource }
+        //         : undefined,
+        //     },
+        //   ],
+        // },
+        // video: {
+        //   mandatory: {
+        //     maxWidth: 1280,
+        //     maxHeight: 720,
+        //     maxFrameRate: 30,
+        //     minFrameRate: 15,
+        //   },
+        //   // optional: [
+        //   //   {
+        //   //     sourceId: this.videoSource
+        //   //       ? { exact: this.videoSource }
+        //   //       : undefined,
+        //   //   },
+        //   // ],
+        // },
       },
       onicecandidate: this.onIceCandidate.bind(
         participant,
@@ -61,7 +221,9 @@ class Video {
         this.currentParticipantName
       ),
     };
-    participant.rtcPeer.dispose();
+    console.log(options, 'enabled aud options');
+
+    // participant.rtcPeer.dispose();
     //@ts-ignore
     participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
       options,
@@ -77,6 +239,7 @@ class Video {
           )
         );
 
+        participant.rtcPeer.videoEnabled = true;
         participant.rtcPeer.audioEnabled = true;
 
         if (!this.config.audioEnabled) {
@@ -84,6 +247,7 @@ class Video {
         }
       }
     );
+    console.log(participant.rtcPeer, 'enabled aud rtcPeer');
   };
 
   stopStream = (participant: any, stream: 'audio' | 'video') => {
@@ -130,7 +294,7 @@ class Video {
       console.log(parsedMessage, 'message');
       switch (parsedMessage.id) {
         case 'existingParticipants':
-          console.log(parsedMessage.id, '*****', parsedMessage.name);
+          console.log(parsedMessage.id, '*****', parsedMessage);
           this.onExistingParticipants(parsedMessage);
           break;
 
@@ -271,7 +435,7 @@ class Video {
                     this.offerToReceiveVideo.bind(
                       participant,
                       participant,
-                      this.currentUser
+                      this.currentParticipantName
                     )
                   );
                 }
@@ -547,7 +711,7 @@ class Video {
         this.config.videoEnabled = value;
 
         if (value) {
-          this.startStream(participant, 'video');
+          this.startStream(participant);
         } else {
           this.stopStream(participant, 'video');
         }
