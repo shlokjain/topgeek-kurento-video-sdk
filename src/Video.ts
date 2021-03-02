@@ -99,12 +99,37 @@ class Video extends Model {
     this.audioSource = device.deviceId;
 
     const participant = this.currentUser;
-    this.stopStream(participant, 'audio');
-    this.stopStream(participant, 'video');
-    // .then(resp => {
-    setTimeout(() => {
-      this.startStream(participant);
-    }, 10000);
+
+    if (!participant) {
+      return;
+    }
+
+    this.setVideo(false);
+    this.setVideo(true);
+
+    // // this.stopStream(participant, 'audio');
+    // this.stopStream(participant, 'video');
+
+    // var msg = {
+    //   id: 'setVideo',
+    //   sender: participant.name,
+    //   value: false,
+    //   roomName: this.room.name,
+    // };
+    // socket.emit('message', msg);
+
+    // // // // .then(resp => {
+    // setTimeout(() => {
+    //   this.startStream(participant);
+
+    //   // var msg = {
+    //   //   id: 'setVideo',
+    //   //   sender: participant.name,
+    //   //   value: false,
+    //   //   roomName: this.room.name,
+    //   // };
+    //   // socket.emit('message', msg);
+    // }, 5000);
     // })
   };
   selectVideoInputDevice = (deviceId: string) => {
@@ -150,16 +175,16 @@ class Video extends Model {
       // videoStream: video_el.srcObject,
       mediaConstraints: {
         video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
-        // audio: true,
+        audio: true,
         // audio: {
         //   deviceId: {
         //     exact:
         //       '545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e',
         //   },
         // },
-        audio: {
-          deviceId: this.audioSource ? { exact: this.audioSource } : undefined,
-        },
+        // audio: {
+        //   deviceId: this.audioSource ? { exact: this.audioSource } : undefined,
+        // },
         // video: {
         //   deviceId: this.videoSource ? { exact: this.videoSource } : undefined,
         // },
@@ -198,7 +223,7 @@ class Video extends Model {
     };
     console.log(options, 'enabled aud options');
 
-    participant.rtcPeer.dispose();
+    // participant.rtcPeer.dispose();
     //@ts-ignore
     participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
       options,
@@ -410,7 +435,7 @@ class Video extends Model {
                     this.offerToReceiveVideo.bind(
                       participant,
                       participant,
-                      this.currentUser
+                      this.currentParticipantName
                     )
                   );
                 }
