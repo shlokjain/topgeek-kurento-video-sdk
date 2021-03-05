@@ -320,15 +320,20 @@ class App extends React.Component<any, any> {
     });
     // document.getElementById('sample-video').play();
 
+    let randomNo = Math.floor(Math.random() * 100);
     VideoSDK.connect(`ttg-socket-server-token`, {
       // url: 'https://176.9.72.40:3000/',
       url: 'https://localhost/',
-      name: `Suraj` + Math.floor(Math.random() * 100),
+      name: `Suraj` + randomNo,
+      displayName: `Suraj Ahmed ` + randomNo,
       // name: `Suraj`,
       roomName: 'room-3',
       videoEnabled: true,
       audioEnabled: false,
       recording: true,
+      meta: {
+        type: 'opening_interview',
+      },
     })
       .then(async (room: any) => {
         forEach(room.participants, participant => {
@@ -337,6 +342,7 @@ class App extends React.Component<any, any> {
 
         room.on('participantConnected', async participantConnected => {
           let name = participantConnected.name;
+          let displayName = participantConnected.displayName;
 
           var container = document.createElement('div');
 
@@ -346,7 +352,9 @@ class App extends React.Component<any, any> {
 
           var span = document.createElement('span');
 
-          span.appendChild(document.createTextNode(name));
+          span.appendChild(
+            document.createTextNode(name + `(${displayName || name})`)
+          );
           container.appendChild(span);
 
           //@ts-ignore
@@ -411,6 +419,29 @@ class App extends React.Component<any, any> {
           //
         });
 
+        room.on('receiveText', participant => {
+          let name = participant.sender;
+          let displayName = participant.senderDisplayName;
+          console.log(
+            'receiveText 1',
+            participant,
+            VideoSDK.currentParticipantName
+          );
+
+          var div1 = document.createElement('div');
+          div1.className = 'div-wrapper';
+
+          div1.appendChild(
+            document.createTextNode(
+              VideoSDK.currentParticipantName == name ? 'You' : displayName
+            )
+          );
+          var div2 = document.createElement('div');
+          div2.appendChild(document.createTextNode(participant.text));
+          div1.appendChild(div2);
+          document.getElementById('messages').appendChild(div1);
+        });
+
         room.on('disconnected', error => {
           room.participants.forEach(participant => {
             //
@@ -453,35 +484,36 @@ class App extends React.Component<any, any> {
 
   render() {
     return (
-      <div>
-        <button
-          onClick={() => {
-            console.log(VideoSDK, 'participants here');
-            VideoSDK.leaveRoom();
-          }}
-        >
-          Leave room
-        </button>
+      <div style={{ display: 'flex' }}>
+        <div style={{ width: '70%' }}>
+          <button
+            onClick={() => {
+              console.log(VideoSDK, 'participants here');
+              VideoSDK.leaveRoom();
+            }}
+          >
+            Leave room
+          </button>
 
-        <button
-          onClick={() => {
-            console.log(VideoSDK, 'participants here');
-            VideoSDK.shareScreen();
-          }}
-        >
-          Share Screen
-        </button>
+          <button
+            onClick={() => {
+              console.log(VideoSDK, 'participants here');
+              VideoSDK.shareScreen();
+            }}
+          >
+            Share Screen
+          </button>
 
-        <button
-          onClick={() => {
-            console.log(VideoSDK, 'participants here');
-            VideoSDK.stopScreenSharing();
-          }}
-        >
-          stop sharing Screen
-        </button>
+          <button
+            onClick={() => {
+              console.log(VideoSDK, 'participants here');
+              VideoSDK.stopScreenSharing();
+            }}
+          >
+            stop sharing Screen
+          </button>
 
-        {/* <button
+          {/* <button
           onClick={() => {
             // this.recognition.start();
             this.speak('hello there!');
@@ -497,55 +529,55 @@ class App extends React.Component<any, any> {
         >
           record
         </button> */}
-        <button
-          onClick={() => {
-            // this.recognition.start();
-            // this.start('video');
-            VideoSDK.setVideo(true);
-          }}
-        >
-          start video
-        </button>
-        <button
-          onClick={() => {
-            VideoSDK.setVideo(false);
-          }}
-        >
-          stop video
-        </button>
+          <button
+            onClick={() => {
+              // this.recognition.start();
+              // this.start('video');
+              VideoSDK.setVideo(true);
+            }}
+          >
+            start video
+          </button>
+          <button
+            onClick={() => {
+              VideoSDK.setVideo(false);
+            }}
+          >
+            stop video
+          </button>
 
-        <button
-          onClick={() => {
-            // this.recognition.start();
-            // this.start('video');
-            VideoSDK.setAudio(true);
-          }}
-        >
-          start audio
-        </button>
-        <button
-          onClick={() => {
-            VideoSDK.setAudio(false);
-          }}
-        >
-          stop audio
-        </button>
+          <button
+            onClick={() => {
+              // this.recognition.start();
+              // this.start('video');
+              VideoSDK.setAudio(true);
+            }}
+          >
+            start audio
+          </button>
+          <button
+            onClick={() => {
+              VideoSDK.setAudio(false);
+            }}
+          >
+            stop audio
+          </button>
 
-        <button
-          onClick={() => {
-            console.log('speech ::: start here', 'participants here');
+          <button
+            onClick={() => {
+              console.log('speech ::: start here', 'participants here');
 
-            // final_transcript = '';
-            // this.recognition.lang = select_dialect.value;
-            // recognition.start();
+              // final_transcript = '';
+              // this.recognition.lang = select_dialect.value;
+              // recognition.start();
 
-            this.recognition.start();
-          }}
-        >
-          start
-        </button>
+              this.recognition.start();
+            }}
+          >
+            start
+          </button>
 
-        {/* <Grid templateColumns="repeat(3, 1fr)" mt="5" gap={6}>
+          {/* <Grid templateColumns="repeat(3, 1fr)" mt="5" gap={6}>
           <Box>
             <Text fontSize="xs" mb="1">
               Microphone
@@ -588,7 +620,7 @@ class App extends React.Component<any, any> {
           </Box>
         </Grid> */}
 
-        {/* <button
+          {/* <button
           onClick={() => {
             console.log('speech ::: start here', 'participants here');
           }}
@@ -596,23 +628,23 @@ class App extends React.Component<any, any> {
           quickstart
         </button> */}
 
-        <div id="participants" />
-        <div className="canvas-wrapper">
-          <video
-            id="screen-video"
-            style={{
-              display: 'none',
-            }}
-            autoplay="autoplay"
-            width="400"
-          ></video>
-        </div>
-        <div id="scatter-gl-container"></div>
+          <div id="participants" />
+          <div className="canvas-wrapper">
+            <video
+              id="screen-video"
+              style={{
+                display: 'none',
+              }}
+              autoplay="autoplay"
+              width="400"
+            ></video>
+          </div>
+          <div id="scatter-gl-container"></div>
 
-        <div id="subtitle">{this.state.caption}</div>
-        {/* <textarea id="maintext" rows={5} cols={50} /> */}
+          <div id="subtitle">{this.state.caption}</div>
+          {/* <textarea id="maintext" rows={5} cols={50} /> */}
 
-        {/* <video
+          {/* <video
           id="sample-video"
           // autoplay="autoplay"
           width="400"
@@ -620,15 +652,15 @@ class App extends React.Component<any, any> {
           src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
         ></video> */}
 
-        <button
-          onClick={() => {
-            // this.recognition.start();
-            VideoSDK.startPlaying();
-          }}
-        >
-          play remote video
-        </button>
-        {/* <button
+          <button
+            onClick={() => {
+              // this.recognition.start();
+              VideoSDK.startPlaying();
+            }}
+          >
+            play remote video
+          </button>
+          {/* <button
           onClick={() => {
             // this.recognition.start();
             // this.changeAudioDestination('default');
@@ -638,33 +670,33 @@ class App extends React.Component<any, any> {
           change default
         </button> */}
 
-        {VideoSDK.getAudioOutputDevices().map(element => {
-          return (
-            <button
-              style={{ margin: 5 }}
-              onClick={() => {
-                VideoSDK.selectAudioOutputDevice(element);
-              }}
-            >
-              change audio des - {element.label}
-            </button>
-          );
-        })}
+          {VideoSDK.getAudioOutputDevices().map(element => {
+            return (
+              <button
+                style={{ margin: 5 }}
+                onClick={() => {
+                  VideoSDK.selectAudioOutputDevice(element);
+                }}
+              >
+                change audio des - {element.label}
+              </button>
+            );
+          })}
 
-        {VideoSDK.getAudioInputDevices().map(element => {
-          return (
-            <button
-              style={{ margin: 5 }}
-              onClick={() => {
-                VideoSDK.selectAudioInputDevice(element);
-              }}
-            >
-              change audio input - {element.label} - {element.deviceId}
-            </button>
-          );
-        })}
+          {VideoSDK.getAudioInputDevices().map(element => {
+            return (
+              <button
+                style={{ margin: 5 }}
+                onClick={() => {
+                  VideoSDK.selectAudioInputDevice(element);
+                }}
+              >
+                change audio input - {element.label} - {element.deviceId}
+              </button>
+            );
+          })}
 
-        {/* <button
+          {/* <button
           onClick={() => {
             // this.recognition.start();
             VideoSDK.selectAudioOutputDevice(
@@ -686,7 +718,7 @@ class App extends React.Component<any, any> {
             : ''}
         </button> */}
 
-        {/* <button
+          {/* <button
           onClick={() => {
             // this.recognition.start();
             VideoSDK.selectAudioInputDevice(
@@ -699,6 +731,27 @@ class App extends React.Component<any, any> {
           change audio input
           545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e
         </button> */}
+        </div>
+        <div style={{ width: '30%' }}>
+          <div style={{ display: 'flex' }}>
+            <textarea
+              id="message-text"
+              placeholder="type here.."
+              style={{ marginRight: '5px' }}
+            ></textarea>
+            <button
+              onClick={() => {
+                VideoSDK.sendTextToRoom(
+                  document.getElementById('message-text').value
+                );
+                document.getElementById('message-text').value = '';
+              }}
+            >
+              Send
+            </button>
+          </div>
+          <div id="messages" />
+        </div>
       </div>
     );
   }

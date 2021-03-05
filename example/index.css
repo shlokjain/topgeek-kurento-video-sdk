@@ -16,3 +16,10 @@
   top: 50%;
   position: absolute;
 }
+
+.div-wrapper {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-weight: 500;
+  white-space: pre-wrap;
+}

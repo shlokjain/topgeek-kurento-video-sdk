@@ -3,14 +3,16 @@ import Model from './Model';
 
 export default class Participant extends Model {
   name: string;
+  displayName: string;
   room: Room;
   rtcPeer: any;
   track: any;
   screen: any;
   isScreenShared: boolean = false;
-  constructor(name: string, room: Room) {
+  constructor(name: string, displayName: string, room: Room) {
     super();
     this.name = name;
+    this.displayName = displayName;
     this.room = room;
     Object.defineProperty(this, 'rtcPeer', { writable: true });
 

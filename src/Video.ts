@@ -27,14 +27,16 @@ class Video extends Model {
   config: {
     url: string;
     name: string;
+    displayName: string;
     roomName: string;
     videoEnabled: boolean;
     audioEnabled: boolean;
+    meta?: any;
   };
   private audioInputs: any = [];
   private videoInputs: any = [];
   private audioOutputs: any = [];
-  private audioSource: any = true;
+  private audioSource: any = 'default';
   private videoSource: any = true;
 
   private selectedAudioOutputDevice: any;
@@ -268,15 +270,17 @@ class Video extends Model {
     config: {
       url: string;
       name: string;
+      displayName: string;
       roomName: string;
       videoEnabled: boolean;
       audioEnabled: boolean;
       recording?: boolean;
+      meta?: any;
     }
   ) {
     this.config = config;
     socket = socketIOClient(config.url, {
-      query: `accessToken=${token}`,
+      query: `accessToken=${token}&meta=` + JSON.stringify(config.meta),
     });
     this.currentParticipantName = config.name;
     socket.on('error', function(data: any) {
@@ -466,6 +470,7 @@ class Video extends Model {
         var message = {
           id: 'joinRoom',
           name: config.name,
+          displayName: config.displayName,
           roomName: config.roomName,
           videoEnabled: config.videoEnabled,
           audioEnabled: true,
@@ -583,7 +588,8 @@ class Video extends Model {
 
   onNewParticipant(request: any) {
     console.log('request name new', request.name);
-    this.receiveVideo(request.name);
+    console.log('request displayName new', request.displayName);
+    this.receiveVideo(request.name, request.displayName);
   }
 
   addListenerForScreen(participant: any) {
@@ -595,8 +601,8 @@ class Video extends Model {
           name: this.currentParticipantName,
           roomName: this.room.name,
         };
-        screenTrack[0].onended = function() {
-          socket.emit('message', message);
+        screenTrack[0].onended = () => {
+          this.sendMessage(message);
         };
       }
     }
@@ -611,13 +617,17 @@ class Video extends Model {
 
   onExistingParticipants(request: any) {
     console.log('request name', request.name);
+    console.log('request displayName', request.displayName);
     var constraints: any = {
       audio: true,
       video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
     };
     let name = request.name;
+    let displayName = request.displayName;
     if (this.room) {
-      var participant = new Participant(name, this.room);
+      console.log('request onExistingParticipants', name, displayName);
+
+      var participant = new Participant(name, displayName, this.room);
       var video = participant.getVideoElement();
 
       // var videoScreen = participant.getScreenElement();
@@ -674,7 +684,9 @@ class Video extends Model {
           this.addListenerForScreen(participant);
         }
       );
-      request.data.forEach(this.receiveVideo);
+      request.data.forEach((element: any) => {
+        this.receiveVideo(element.name, element.displayName);
+      });
     }
 
     // }
@@ -955,7 +967,7 @@ class Video extends Model {
             name: this.currentParticipantName,
             roomName: this.room.name,
           };
-          socket.emit('message', message);
+          this.sendMessage(message);
         }
       })
       .catch((error: any) => {
@@ -963,8 +975,9 @@ class Video extends Model {
       });
   }
 
-  receiveVideo = (name: any) => {
-    var participant = new Participant(name, this.room);
+  receiveVideo = (name: any, displayName: any) => {
+    console.log('request receiveVideo', name, displayName);
+    var participant = new Participant(name, displayName, this.room);
 
     console.log('receive video', name, this.currentParticipantName);
     if (this.room) {
