@@ -280,7 +280,7 @@ class Video extends Model {
   ) {
     this.config = config;
     socket = socketIOClient(config.url, {
-      query: `accessToken=${token}&meta=` + JSON.stringify(config.meta),
+      query: `accessToken=${token}&meta=` + JSON.stringify(config.meta || ''),
     });
     this.currentParticipantName = config.name;
     socket.on('error', function(data: any) {
