@@ -309,6 +309,13 @@ class App extends React.Component<any, any> {
     );
   };
 
+  parseStats = res => {
+    Object.keys(res.stats).forEach(key => {
+      document.getElementById((res.isScreen ? 'screen-' : '') + key).innerHTML =
+        res.stats[key];
+    });
+  };
+
   componentDidMount() {
     VideoSDK.on('devicesConnected', () => {
       this.setState({
@@ -318,6 +325,11 @@ class App extends React.Component<any, any> {
       console.log(VideoSDK.getAudioInputDevices(), 'audio output devices @@@');
       console.log(VideoSDK.getVideoInputDevices(), 'audio output devices @@@');
     });
+
+    VideoSDK.on('stats', res => {
+      this.parseStats(res);
+    });
+
     // document.getElementById('sample-video').play();
 
     let randomNo = Math.floor(Math.random() * 100);
@@ -731,6 +743,282 @@ class App extends React.Component<any, any> {
           change audio input
           545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e
         </button> */}
+
+          <div style={{ display: 'flex' }}>
+            <div style={{ width: '50%' }}>
+              <h3>Local Camera</h3>
+              <table className="table table-condensed">
+                <tr>
+                  <th>Stat</th>
+                  <th>Browser (send)</th>
+                  <th>KMS (recv)</th>
+                </tr>
+                <tr>
+                  <td>SSRC</td>
+                  <td id="browserOutgoingSsrc">--</td>
+                  <td id="kmsIncomingSsrc">--</td>
+                </tr>
+                <tr>
+                  <td>Packets</td>
+                  <td id="browserPacketsSent">--</td>
+                  <td id="kmsPacketsReceived">--</td>
+                </tr>
+                <tr>
+                  <td>Bytes</td>
+                  <td id="browserBytesSent">--</td>
+                  <td id="kmsBytesReceived">--</td>
+                </tr>
+                <tr>
+                  <td>Packets Lost</td>
+                  <td>--</td>
+                  <td id="kmsPacketsLost">--</td>
+                </tr>
+                <tr>
+                  <td>Fraction Lost</td>
+                  <td>--</td>
+                  <td id="kmsFractionLost">--</td>
+                </tr>
+                <tr>
+                  <td>Jitter</td>
+                  <td>--</td>
+                  <td id="kmsJitter">--</td>
+                </tr>
+                <tr>
+                  <td>NACK</td>
+                  <td id="browserNackReceived">--</td>
+                  <td id="kmsNackSent">--</td>
+                </tr>
+                <tr>
+                  <td>FIR</td>
+                  <td id="browserFirReceived">--</td>
+                  <td id="kmsFirSent">--</td>
+                </tr>
+                <tr>
+                  <td>PLI</td>
+                  <td id="browserPliReceived">--</td>
+                  <td id="kmsPliSent">--</td>
+                </tr>
+                <tr>
+                  <td>ICE RTT</td>
+                  <td id="browserOutgoingIceRtt">--</td>
+                  <td id="kmsRtt">--</td>
+                </tr>
+                <tr>
+                  <td>REMB</td>
+                  <td id="browserOutgoingAvailableBitrate">--</td>
+                  <td id="kmsRembSend">--</td>
+                </tr>
+              </table>
+              <p>
+                KMS end-to-end latency:
+                <span id="e2eLatency">--</span>
+              </p>
+            </div>
+
+            <div style={{ width: '50%' }}>
+              <h3>Remote Camera</h3>
+              <table className="table table-condensed">
+                <tr>
+                  <th>Stat</th>
+                  <th>KMS (send)</th>
+                  <th>Browser (recv)</th>
+                </tr>
+                <tr>
+                  <td>SSRC</td>
+                  <td id="kmsOutogingSsrc">--</td>
+                  <td id="browserIncomingSsrc">--</td>
+                </tr>
+                <tr>
+                  <td>Packets</td>
+                  <td id="kmsPacketsSent">--</td>
+                  <td id="browserPacketsReceived">--</td>
+                </tr>
+                <tr>
+                  <td>Bytes</td>
+                  <td id="kmsBytesSent">--</td>
+                  <td id="browserBytesReceived">--</td>
+                </tr>
+                <tr>
+                  <td>Packets Lost</td>
+                  <td>--</td>
+                  <td id="browserIncomingPacketsLost">--</td>
+                </tr>
+                <tr>
+                  <td>Fraction Lost</td>
+                  <td id="kmsFractionLost">--</td>
+                  <td>--</td>
+                </tr>
+                <tr>
+                  <td>Jitter</td>
+                  <td>--</td>
+                  <td id="browserIncomingJitter">--</td>
+                </tr>
+                <tr>
+                  <td>NACK</td>
+                  <td id="kmsNackReceived">--</td>
+                  <td id="browserNackSent">--</td>
+                </tr>
+                <tr>
+                  <td>FIR</td>
+                  <td id="kmsFirReceived">--</td>
+                  <td id="browserFirSent">--</td>
+                </tr>
+                <tr>
+                  <td>PLI</td>
+                  <td id="kmsPliReceived">--</td>
+                  <td id="browserPliSent">--</td>
+                </tr>
+                <tr>
+                  <td>ICE RTT</td>
+                  <td id="kmsRtt">--</td>
+                  <td id="browserIncomingIceRtt">--</td>
+                </tr>
+                <tr>
+                  <td>REMB</td>
+                  <td id="kmsRembReceived">--</td>
+                  <td id="browserIncomingAvailableBitrate">--</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex' }}>
+            <div style={{ width: '50%' }}>
+              <h3>Local Screen</h3>
+              <table className="table table-condensed">
+                <tr>
+                  <th>Stat</th>
+                  <th>Browser (send)</th>
+                  <th>KMS (recv)</th>
+                </tr>
+                <tr>
+                  <td>SSRC</td>
+                  <td id="screen-browserOutgoingSsrc">--</td>
+                  <td id="screen-kmsIncomingSsrc">--</td>
+                </tr>
+                <tr>
+                  <td>Packets</td>
+                  <td id="screen-browserPacketsSent">--</td>
+                  <td id="screen-kmsPacketsReceived">--</td>
+                </tr>
+                <tr>
+                  <td>Bytes</td>
+                  <td id="screen-browserBytesSent">--</td>
+                  <td id="screen-kmsBytesReceived">--</td>
+                </tr>
+                <tr>
+                  <td>Packets Lost</td>
+                  <td>--</td>
+                  <td id="screen-kmsPacketsLost">--</td>
+                </tr>
+                <tr>
+                  <td>Fraction Lost</td>
+                  <td>--</td>
+                  <td id="screen-kmsFractionLost">--</td>
+                </tr>
+                <tr>
+                  <td>Jitter</td>
+                  <td>--</td>
+                  <td id="screen-kmsJitter">--</td>
+                </tr>
+                <tr>
+                  <td>NACK</td>
+                  <td id="screen-browserNackReceived">--</td>
+                  <td id="screen-kmsNackSent">--</td>
+                </tr>
+                <tr>
+                  <td>FIR</td>
+                  <td id="screen-browserFirReceived">--</td>
+                  <td id="screen-kmsFirSent">--</td>
+                </tr>
+                <tr>
+                  <td>PLI</td>
+                  <td id="screen-browserPliReceived">--</td>
+                  <td id="screen-kmsPliSent">--</td>
+                </tr>
+                <tr>
+                  <td>ICE RTT</td>
+                  <td id="screen-browserOutgoingIceRtt">--</td>
+                  <td id="screen-kmsRtt">--</td>
+                </tr>
+                <tr>
+                  <td>REMB</td>
+                  <td id="screen-browserOutgoingAvailableBitrate">--</td>
+                  <td id="screen-kmsRembSend">--</td>
+                </tr>
+              </table>
+              <p>
+                KMS screen end-to-end latency:
+                <span id="screen-e2eLatency">--</span>
+              </p>
+            </div>
+
+            <div style={{ width: '50%' }}>
+              <h3>Remote Screen</h3>
+              <table className="table table-condensed">
+                <tr>
+                  <th>Stat</th>
+                  <th>KMS (send)</th>
+                  <th>Browser (recv)</th>
+                </tr>
+                <tr>
+                  <td>SSRC</td>
+                  <td id="screen-kmsOutogingSsrc">--</td>
+                  <td id="screen-browserIncomingSsrc">--</td>
+                </tr>
+                <tr>
+                  <td>Packets</td>
+                  <td id="screen-kmsPacketsSent">--</td>
+                  <td id="screen-browserPacketsReceived">--</td>
+                </tr>
+                <tr>
+                  <td>Bytes</td>
+                  <td id="screen-kmsBytesSent">--</td>
+                  <td id="screen-browserBytesReceived">--</td>
+                </tr>
+                <tr>
+                  <td>Packets Lost</td>
+                  <td>--</td>
+                  <td id="screen-browserIncomingPacketsLost">--</td>
+                </tr>
+                <tr>
+                  <td>Fraction Lost</td>
+                  <td id="screen-kmsFractionLost">--</td>
+                  <td>--</td>
+                </tr>
+                <tr>
+                  <td>Jitter</td>
+                  <td>--</td>
+                  <td id="screen-browserIncomingJitter">--</td>
+                </tr>
+                <tr>
+                  <td>NACK</td>
+                  <td id="screen-kmsNackReceived">--</td>
+                  <td id="screen-browserNackSent">--</td>
+                </tr>
+                <tr>
+                  <td>FIR</td>
+                  <td id="screen-kmsFirReceived">--</td>
+                  <td id="screen-browserFirSent">--</td>
+                </tr>
+                <tr>
+                  <td>PLI</td>
+                  <td id="screen-kmsPliReceived">--</td>
+                  <td id="screen-browserPliSent">--</td>
+                </tr>
+                <tr>
+                  <td>ICE RTT</td>
+                  <td id="screen-kmsRtt">--</td>
+                  <td id="screen-browserIncomingIceRtt">--</td>
+                </tr>
+                <tr>
+                  <td>REMB</td>
+                  <td id="screen-kmsRembReceived">--</td>
+                  <td id="screen-browserIncomingAvailableBitrate">--</td>
+                </tr>
+              </table>
+            </div>
+          </div>
         </div>
         <div style={{ width: '30%' }}>
           <div style={{ display: 'flex' }}>

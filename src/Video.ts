@@ -17,6 +17,7 @@ const DEFAULT_VIDEO_CONSTRAINT = {
   // },
 };
 var socket: any;
+var handle: any;
 
 class Video extends Model {
   socket: any;
@@ -292,10 +293,11 @@ class Video extends Model {
 
     socket.on('disconnect', function(data: any) {
       console.log('disconnected on event', data);
+      clearInterval(handle);
     });
 
     socket.on('message', (parsedMessage: any) => {
-      console.log(parsedMessage, 'message');
+      if (parsedMessage.id != 'stats') console.log(parsedMessage, 'message');
       switch (parsedMessage.id) {
         case 'existingParticipants':
           console.log(parsedMessage.id, '*****', parsedMessage);
@@ -353,6 +355,8 @@ class Video extends Model {
 
         case 'participantLeft':
           this.onParticipantLeft(parsedMessage);
+          clearInterval(handle);
+
           break;
 
         case 'receiveVideoAnswer':
@@ -461,6 +465,9 @@ class Video extends Model {
               }
             );
           }
+          break;
+        case 'stats':
+          this.saveStats(parsedMessage);
           break;
       }
     });
@@ -653,6 +660,7 @@ class Video extends Model {
         // sendSource: 'desktop',
       };
 
+      console.log('asbhasoptions', options);
       //@ts-ignore
       participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
         options,
@@ -681,6 +689,7 @@ class Video extends Model {
           }
 
           this.room.connectParticipant(participant);
+          this.activateStatsTimeout(participant);
           this.addListenerForScreen(participant);
         }
       );
@@ -691,6 +700,51 @@ class Video extends Model {
 
     // }
   }
+
+  activateStatsTimeout = (participant: any) => {
+    let $this = this;
+    handle = setInterval(function() {
+      $this.printStats(participant);
+    }, 2000);
+  };
+
+  printStats = (participant: any) => {
+    let $this = this;
+    this.getBrowserOutgoingVideoStats(participant.rtcPeer, function(
+      // this.getBrowserOutgoingVideoStats(this.currentUser.rtcPeer, function(
+      error: any,
+      stats: any
+    ) {
+      if (error) {
+        console.log('getBrowserOutgoingVideoStats error', error);
+        return;
+      }
+      const message = {
+        id: 'getBrowserOutgoingVideoStats',
+        name: participant.name,
+        roomName: $this.room.name,
+        stats: stats,
+      };
+      $this.sendMessage(message);
+    });
+    this.getBrowserIncomingVideoStats(participant.rtcPeer, function(
+      // this.getBrowserIncomingVideoStats(this.currentUser.rtcPeer, function(
+      error: any,
+      stats: any
+    ) {
+      if (error) {
+        console.log('getBrowserIncomingVideoStats error', error);
+        return;
+      }
+      const message = {
+        id: 'getBrowserIncomingVideoStats',
+        name: participant.name,
+        roomName: $this.room.name,
+        stats: stats,
+      };
+      $this.sendMessage(message);
+    });
+  };
 
   setAudio = (value: boolean) => {
     if (this.currentUser) {
@@ -816,6 +870,176 @@ class Video extends Model {
     //     });
     //   });
     // });
+  };
+
+  getBrowserOutgoingVideoStats = (webRtcPeer: any, callback: any) => {
+    if (!webRtcPeer) return callback('Cannot get stats from null webRtcPeer');
+    let peerConnection = webRtcPeer.peerConnection;
+    if (!peerConnection)
+      return callback('Cannot get stats from null peerConnection');
+    let localVideoStream = peerConnection.getLocalStreams()[0];
+    if (!localVideoStream)
+      return callback('Non existent local stream: cannot read stats');
+    let localVideoTrack = localVideoStream.getVideoTracks()[0];
+    if (!localVideoTrack)
+      return callback('Non existent local video track: cannot read stats');
+
+    peerConnection
+      .getStats(localVideoTrack)
+      .then(function(stats: any) {
+        let retVal = { isRemote: false };
+
+        // "stats" is of type RTCStatsReport
+        // https://www.w3.org/TR/webrtc/#rtcstatsreport-object
+        // https://developer.mozilla.org/en-US/docs/Web/API/RTCStatsReport
+        // which behaves like a Map
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
+        const statsArr = Array.from(stats.values());
+
+        // "report.type" is of type RTCStatsType
+        // https://developer.mozilla.org/en-US/docs/Web/API/RTCStatsType
+        const reportsRtp = statsArr.filter((report: any) => {
+          return report.type === 'outbound-rtp';
+        });
+        const reportsCandidatePair = statsArr.filter((report: any) => {
+          return report.type === 'candidate-pair';
+        });
+        const reportsCodec = statsArr.filter((report: any) => {
+          return report.type === 'codec';
+        });
+
+        // Get the first RTP report to import its stats
+        if (reportsRtp.length < 1) {
+          console.warn('No RTP reports found in RTCStats');
+          return;
+        }
+        const reportRtp: any = reportsRtp[0];
+
+        // RTCStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcstats
+        retVal['timestamp'] = reportRtp.timestamp;
+
+        // RTCRtpStreamStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcrtpstreamstats
+        retVal['ssrc'] = reportRtp.ssrc;
+
+        // RTCSentRtpStreamStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcsentrtpstreamstats
+        retVal['packetsSent'] = reportRtp.packetsSent;
+        retVal['bytesSent'] = reportRtp.bytesSent;
+
+        // RTCOutboundRtpStreamStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats
+        retVal['nackCount'] = reportRtp.nackCount;
+        retVal['firCount'] = 'firCount' in reportRtp ? reportRtp.firCount : 0;
+        retVal['pliCount'] = 'pliCount' in reportRtp ? reportRtp.pliCount : 0;
+        retVal['sliCount'] = 'sliCount' in reportRtp ? reportRtp.sliCount : 0;
+
+        //  RTCIceCandidatePairStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats
+        const matchCandidatePairs: any = reportsCandidatePair.filter(
+          (pair: any) => {
+            return pair.transportId === reportRtp.transportId;
+          }
+        );
+        if (matchCandidatePairs.length > 0) {
+          retVal['iceRoundTripTime'] =
+            matchCandidatePairs[0].currentRoundTripTime;
+          retVal['availableBitrate'] =
+            matchCandidatePairs[0].availableOutgoingBitrate;
+        }
+
+        return callback(null, retVal);
+      })
+      .catch(function(err: any) {
+        return callback(err, null);
+      });
+  };
+
+  getBrowserIncomingVideoStats = (webRtcPeer: any, callback: any) => {
+    if (!webRtcPeer) return callback('Cannot get stats from null webRtcPeer');
+    var peerConnection = webRtcPeer.peerConnection;
+    if (!peerConnection)
+      return callback('Cannot get stats from null peerConnection');
+    var remoteVideoStream = peerConnection.getRemoteStreams()[0];
+    if (!remoteVideoStream)
+      return callback('Non existent remote stream: cannot read stats');
+    var remoteVideoTrack = remoteVideoStream.getVideoTracks()[0];
+    if (!remoteVideoTrack)
+      return callback('Non existent remote video track: cannot read stats');
+
+    peerConnection
+      .getStats(remoteVideoTrack)
+      .then(function(stats: any) {
+        let retVal = { isRemote: true };
+
+        // "stats" is of type RTCStatsReport
+        // https://www.w3.org/TR/webrtc/#rtcstatsreport-object
+        // https://developer.mozilla.org/en-US/docs/Web/API/RTCStatsReport
+        // which behaves like a Map
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
+        const statsArr = Array.from(stats.values());
+
+        // "report.type" is of type RTCStatsType
+        // https://developer.mozilla.org/en-US/docs/Web/API/RTCStatsType
+        const reportsRtp = statsArr.filter((report: any) => {
+          return report.type === 'inbound-rtp';
+        });
+        const reportsCandidatePair = statsArr.filter((report: any) => {
+          return report.type === 'candidate-pair';
+        });
+        const reportsCodec = statsArr.filter((report: any) => {
+          return report.type === 'codec';
+        });
+
+        // Get the first RTP report to import its stats
+        if (reportsRtp.length < 1) {
+          console.warn('No RTP reports found in RTCStats');
+          return;
+        }
+        const reportRtp: any = reportsRtp[0];
+
+        // RTCStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcstats
+        retVal['timestamp'] = reportRtp.timestamp;
+
+        // RTCRtpStreamStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcrtpstreamstats
+        retVal['ssrc'] = reportRtp.ssrc;
+
+        // RTCReceivedRtpStreamStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcreceivedrtpstreamstats
+        retVal['packetsReceived'] = reportRtp.packetsReceived;
+        retVal['packetsLost'] = reportRtp.packetsLost;
+        retVal['jitter'] = reportRtp.jitter;
+
+        // RTCInboundRtpStreamStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats
+        retVal['bytesReceived'] = reportRtp.bytesReceived;
+        retVal['nackCount'] = reportRtp.nackCount;
+        retVal['firCount'] = 'firCount' in reportRtp ? reportRtp.firCount : 0;
+        retVal['pliCount'] = 'pliCount' in reportRtp ? reportRtp.pliCount : 0;
+        retVal['sliCount'] = 'sliCount' in reportRtp ? reportRtp.sliCount : 0;
+
+        //  RTCIceCandidatePairStats
+        // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats
+        const matchCandidatePairs: any = reportsCandidatePair.filter(
+          (pair: any) => {
+            return pair.transportId === reportRtp.transportId;
+          }
+        );
+        if (matchCandidatePairs.length > 0) {
+          retVal['iceRoundTripTime'] =
+            matchCandidatePairs[0].currentRoundTripTime;
+          retVal['availableBitrate'] =
+            matchCandidatePairs[0].availableIncomingBitrate;
+        }
+
+        return callback(null, retVal);
+      })
+      .catch(function(err: any) {
+        return callback(err, null);
+      });
   };
 
   startPlaying = () => {
@@ -1092,6 +1316,71 @@ class Video extends Model {
   //     // }
   //   }
   // }
+
+  saveStats(request: any) {
+    if (this.currentUser && request.stats) {
+      let stats = {};
+      if (request.stats.type == 'browserOutgoingVideoStats') {
+        stats = {
+          browserOutgoingSsrc: request.stats.ssrc,
+          browserPacketsSent: request.stats.packetsSent,
+          browserBytesSent: request.stats.bytesSent,
+          browserNackReceived: request.stats.nackCount,
+          browserFirReceived: request.stats.firCount,
+          browserPliReceived: request.stats.pliCount,
+          browserOutgoingIceRtt: request.stats.iceRoundTripTime,
+          browserOutgoingAvailableBitrate: request.stats.availableBitrate,
+        };
+      } else if (request.stats.type == 'browserIncomingVideoStats') {
+        stats = {
+          browserIncomingSsrc: request.stats.ssrc,
+          browserPacketsReceived: request.stats.packetsReceived,
+          browserBytesReceived: request.stats.bytesReceived,
+          browserIncomingPacketsLost: request.stats.packetsLost,
+          browserIncomingJitter: request.stats.jitter,
+          browserNackSent: request.stats.nackCount,
+          browserFirSent: request.stats.firCount,
+          browserPliSent: request.stats.pliCount,
+          browserIncomingIceRtt: request.stats.iceRoundTripTime,
+          browserIncomingAvailableBitrate: request.stats.availableBitrate,
+        };
+      } else if (request.stats.type == 'inboundrtp') {
+        stats = {
+          kmsIncomingSsrc: request.stats.ssrc,
+          kmsBytesReceived: request.stats.bytesReceived,
+          kmsPacketsReceived: request.stats.packetsReceived,
+          kmsPliSent: request.stats.pliCount,
+          kmsFirSent: request.stats.firCount,
+          kmsNackSent: request.stats.nackCount,
+          kmsJitter: request.stats.jitter,
+          kmsPacketsLost: request.stats.packetsLost,
+          kmsFractionLost: request.stats.fractionLost,
+          kmsRembSend: request.stats.remb,
+        };
+      } else if (request.stats.type == 'outboundrtp') {
+        stats = {
+          kmsOutogingSsrc: request.stats.ssrc,
+          kmsBytesSent: request.stats.bytesSent,
+          kmsPacketsSent: request.stats.packetsSent,
+          kmsPliReceived: request.stats.pliCount,
+          kmsFirReceived: request.stats.firCount,
+          kmsNackReceived: request.stats.nackCount,
+          kmsRtt: request.stats.roundTripTime,
+          kmsRembReceived: request.stats.remb,
+        };
+      } else if (request.stats.type == 'endpoint') {
+        stats = {
+          e2eLatency: request.stats.videoE2ELatency,
+        };
+      }
+      console.log('request.name', request.name);
+      this.emit('stats', {
+        stats: stats,
+        type: request.stats.type,
+        isScreen: request.name.startsWith('Screen-'),
+      });
+    }
+  }
 }
 
 export default Video;
