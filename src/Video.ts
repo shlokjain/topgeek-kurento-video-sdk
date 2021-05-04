@@ -6,8 +6,31 @@ import { find, forEach, isNil, map } from 'lodash';
 import Model from './Model';
 
 const DEFAULT_VIDEO_CONSTRAINT = {
-  width: { min: 1024, ideal: 1280, max: 1280 },
-  height: { min: 576, ideal: 720, max: 720 },
+  width: { min: 352, ideal: 852, max: 852 },
+  height: {
+    min: 288,
+    ideal: 480,
+    max: 480,
+  },
+  frameRate: {
+    max: 30,
+    min: 15,
+  },
+
+  // mandatory: {
+  // maxWidth: 1280,
+  // maxHeight: 720,
+  // maxFrameRate: 30,
+  // minFrameRate: 15,
+  // },
+};
+const DEFAULT_SCREEN_CONSTRAINT = {
+  width: { min: 852, ideal: 1280, max: 1280 },
+  height: { min: 480, ideal: 720, max: 720 },
+  frameRate: {
+    max: 30,
+    min: 5,
+  },
 
   // mandatory: {
   //   maxWidth: 1280,
@@ -644,6 +667,10 @@ class Video extends Model {
       let isScreen = false;
       if (participant.name.startsWith('Screen-')) {
         isScreen = true;
+        constraints = {
+          audio: true,
+          video: this.config.videoEnabled ? DEFAULT_SCREEN_CONSTRAINT : false,
+        };
       }
 
       var video = participant.getVideoElement();
