@@ -14,7 +14,7 @@ require('./index.css');
 
 const facemesh = require('@tensorflow-models/facemesh');
 require('@tensorflow/tfjs-backend-webgl');
-const roomName = `room-${Math.ceil(Math.random() * 5)}`;
+const roomName = `room-${Math.ceil(Math.random() * 1)}`;
 
 const VideoSDK = new Video();
 window['video'] = VideoSDK;
@@ -373,7 +373,7 @@ class App extends React.Component<any, any> {
           //@ts-ignore
           var video = participantConnected.getVideoElement();
 
-          video.style.width = '600px';
+          video.style.width = '300px';
           video.style.transform =
             participantConnected === VideoSDK.currentUser
               ? `rotateY(180deg)`

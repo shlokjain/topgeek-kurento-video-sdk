@@ -6,15 +6,15 @@ import { find, forEach, isNil, map } from 'lodash';
 import Model from './Model';
 
 const DEFAULT_VIDEO_CONSTRAINT = {
-  width: { min: 352, ideal: 852, max: 852 },
+  width: { min: 320, ideal: 640, max: 1280 },
   height: {
-    min: 288,
+    min: 240,
     ideal: 480,
-    max: 480,
+    max: 720,
   },
   frameRate: {
     max: 30,
-    min: 15,
+    min: 10,
   },
 
   // mandatory: {
@@ -25,8 +25,8 @@ const DEFAULT_VIDEO_CONSTRAINT = {
   // },
 };
 const DEFAULT_SCREEN_CONSTRAINT = {
-  width: { min: 852, ideal: 1280, max: 1280 },
-  height: { min: 480, ideal: 720, max: 720 },
+  width: { min: 1024, ideal: 1280, max: 1280 },
+  height: { min: 576, ideal: 720, max: 720 },
   frameRate: {
     max: 30,
     min: 5,
