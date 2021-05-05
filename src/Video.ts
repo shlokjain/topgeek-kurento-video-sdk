@@ -652,6 +652,7 @@ class Video extends Model {
       audio: true,
       video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
     };
+    let $this = this;
     let name = request.name;
     let displayName = request.displayName;
     if (this.room) {
@@ -717,6 +718,19 @@ class Video extends Model {
 
           this.room.connectParticipant(participant);
           this.activateStatsTimeout(participant);
+          participant.rtcPeer.peerConnection.oniceconnectionstatechange = function() {
+            let iceConnectionState =
+              participant.rtcPeer.peerConnection.iceConnectionState;
+            if (
+              iceConnectionState &&
+              (iceConnectionState == 'connected' ||
+                iceConnectionState == 'disconnected')
+            ) {
+              $this.emit('rtc-' + iceConnectionState, {
+                isScreen: participant.name.startsWith('Screen-'),
+              });
+            }
+          };
           this.addListenerForScreen(participant);
         }
       );

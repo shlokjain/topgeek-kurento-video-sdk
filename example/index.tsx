@@ -33,6 +33,8 @@ class App extends React.Component<any, any> {
     this.state = {
       caption: '',
       devicesConnected: false,
+      isCameraConnected: false,
+      isScreenConnected: false,
     };
     // this.recognition = new webkitSpeechRecognition();
 
@@ -329,6 +331,29 @@ class App extends React.Component<any, any> {
 
     VideoSDK.on('stats', res => {
       this.parseStats(res);
+    });
+
+    VideoSDK.on('rtc-connected', res => {
+      if (res.isScreen) {
+        this.setState({
+          isScreenConnected: true,
+        });
+      } else {
+        this.setState({
+          isCameraConnected: true,
+        });
+      }
+    });
+    VideoSDK.on('rtc-disconnected', res => {
+      if (res.isScreen) {
+        this.setState({
+          isScreenConnected: false,
+        });
+      } else {
+        this.setState({
+          isCameraConnected: false,
+        });
+      }
     });
 
     // document.getElementById('sample-video').play();
@@ -746,6 +771,16 @@ class App extends React.Component<any, any> {
           change audio input
           545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e
         </button> */}
+            <div>
+              {this.state.isCameraConnected
+                ? 'Camera is connected'
+                : 'Trying to reconnect Camera'}
+            </div>
+            <div>
+              {this.state.isScreenConnected
+                ? 'Screen is connected'
+                : 'Trying to reconnect Screen'}
+            </div>
 
             <div style={{ display: 'flex' }}>
               <div style={{ width: '50%' }}>
