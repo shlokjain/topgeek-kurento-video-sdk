@@ -1,6 +1,7 @@
 import 'react-app-polyfill/ie11';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import moment from 'moment';
 import { data, Video } from '../src';
 import { forEach, result } from 'lodash';
 import kurentoUtils from 'kurento-utils';
@@ -345,6 +346,9 @@ class App extends React.Component<any, any> {
       }
     });
     VideoSDK.on('rtc-disconnected', res => {
+      if (typeof window !== undefined) {
+        window.location.reload();
+      }
       if (res.isScreen) {
         this.setState({
           isScreenConnected: false,
@@ -362,7 +366,7 @@ class App extends React.Component<any, any> {
     VideoSDK.connect(`ttg-socket-server-token`, {
       // url: 'https://176.9.72.40:3000/',
       url: 'https://localhost/',
-      name: `Suraj` + randomNo,
+      name: `Suraj${randomNo}_${moment().valueOf()}`,
       displayName: `Suraj Ahmed ` + randomNo,
       // name: `Suraj`,
       roomName: roomName,

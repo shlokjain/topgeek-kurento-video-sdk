@@ -8,6 +8,7 @@
     "build": "parcel build index.html"
   },
   "dependencies": {
+    "moment": "^2.29.1",
     "react-app-polyfill": "^1.0.6"
   },
   "alias": {

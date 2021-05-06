@@ -746,7 +746,17 @@ class Video extends Model {
     let $this = this;
     handle = setInterval(function() {
       $this.printStats(participant);
+      $this.getStats(participant);
     }, 2000);
+  };
+
+  getStats = (participant: any) => {
+    const message = {
+      id: 'getStats',
+      name: participant.name,
+      roomName: this.room.name,
+    };
+    this.sendMessage(message);
   };
 
   printStats = (participant: any) => {
