@@ -29,7 +29,7 @@ const DEFAULT_SCREEN_CONSTRAINT = {
   height: { min: 576, ideal: 720, max: 720 },
   frameRate: {
     max: 30,
-    min: 5,
+    min: 10,
   },
 
   // mandatory: {
