@@ -855,6 +855,14 @@ class App extends React.Component<any, any> {
                   KMS end-to-end latency:
                   <span id="e2eLatency">--</span>
                 </p>
+                <p>
+                  File Name:
+                  <span id="fileName">--</span>
+                </p>
+                <p>
+                  File Name:
+                  <span id="fileSize">--</span>
+                </p>
               </div>
 
               <div style={{ width: '50%' }}>
@@ -992,6 +1000,14 @@ class App extends React.Component<any, any> {
                 <p>
                   KMS screen end-to-end latency:
                   <span id="screen-e2eLatency">--</span>
+                </p>
+                <p>
+                  Screen File Name:
+                  <span id="screen-fileName">--</span>
+                </p>
+                <p>
+                  Screen File Size:
+                  <span id="screen-fileSize">--</span>
                 </p>
               </div>
 

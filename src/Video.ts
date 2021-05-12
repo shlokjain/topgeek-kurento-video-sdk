@@ -1423,8 +1423,12 @@ class Video extends Model {
         stats = {
           e2eLatency: request.stats.videoE2ELatency,
         };
+      } else if (request.stats.type == 'recorderFile') {
+        stats = {
+          fileName: request.stats.fileName,
+          fileSize: request.stats.fileSize,
+        };
       }
-      console.log('request.name', request.name);
       this.emit('stats', {
         stats: stats,
         type: request.stats.type,
