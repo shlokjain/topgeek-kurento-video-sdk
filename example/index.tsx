@@ -333,6 +333,13 @@ class App extends React.Component<any, any> {
     VideoSDK.on('stats', res => {
       this.parseStats(res);
     });
+    VideoSDK.on('connectivity-check', res => {
+      console.log('connectivity-check', res.status);
+      document.getElementById('connectivity-check')?.innerHTML = res.status;
+      if (res.status == 'disconnected' && typeof window !== undefined) {
+        window.location.reload();
+      }
+    });
 
     VideoSDK.on('rtc-connected', res => {
       if (res.isScreen) {
@@ -620,6 +627,16 @@ class App extends React.Component<any, any> {
             >
               start
             </button>
+            <button
+              onClick={() => {
+                const res = VideoSDK.checkConnectivity(false);
+                document.getElementById(
+                  'connectivity-check'
+                )?.innerHTML = res?.status;
+              }}
+            >
+              Check Connectivity
+            </button>
 
             {/* <Grid templateColumns="repeat(3, 1fr)" mt="5" gap={6}>
           <Box>
@@ -786,6 +803,10 @@ class App extends React.Component<any, any> {
                 : 'Trying to reconnect Screen'}
             </div>
 
+            <div>
+              <span id="connectivity-check" />
+            </div>
+
             <div style={{ display: 'flex' }}>
               <div style={{ width: '50%' }}>
                 <h3>Local Camera</h3>
@@ -860,7 +881,7 @@ class App extends React.Component<any, any> {
                   <span id="fileName">--</span>
                 </p>
                 <p>
-                  File Name:
+                  File Size:
                   <span id="fileSize">--</span>
                 </p>
               </div>

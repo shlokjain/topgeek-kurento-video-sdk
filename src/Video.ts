@@ -1,10 +1,14 @@
+import _ from 'lodash';
 import Room from './Room';
+import moment from 'moment';
 import socketIOClient from 'socket.io-client';
 import kurentoUtils from 'kurento-utils';
 import Participant from './Participant';
 import { find, forEach, isNil, map } from 'lodash';
 import Model from './Model';
 
+const MAX_DATA = 10,
+  CONNECTIVITY_COUNT = 7;
 const DEFAULT_VIDEO_CONSTRAINT = {
   width: { min: 320, ideal: 640, max: 1280 },
   height: {
@@ -39,6 +43,13 @@ const DEFAULT_SCREEN_CONSTRAINT = {
   //   minFrameRate: 15,
   // },
 };
+
+let cameraStats: any = [];
+let screenStats: any = [];
+let cameraConnectivity: any = [];
+let screenConnectivity: any = [];
+let connectivity: any = [];
+
 var socket: any;
 var handle: any;
 
@@ -743,23 +754,35 @@ class Video extends Model {
   }
 
   activateStatsTimeout = (participant: any) => {
+    let isScreen = participant.name.startsWith('Screen-');
     let $this = this;
     handle = setInterval(function() {
-      $this.printStats(participant);
-      $this.getStats(participant);
+      let time = moment().format('D MM Y HH:mm:ss');
+      $this.printStats(participant, time);
+      $this.getStats(participant, time);
+      $this.pushToStatsArray(
+        isScreen,
+        isScreen ? screenStats : cameraStats,
+        time,
+        {
+          at: time,
+        }
+      );
+      $this.checkConnectivity(true);
     }, 2000);
   };
 
-  getStats = (participant: any) => {
+  getStats = (participant: any, time: any) => {
     const message = {
       id: 'getStats',
       name: participant.name,
       roomName: this.room.name,
+      sent_at: time,
     };
     this.sendMessage(message);
   };
 
-  printStats = (participant: any) => {
+  printStats = (participant: any, time: any) => {
     let $this = this;
     this.getBrowserOutgoingVideoStats(participant.rtcPeer, function(
       // this.getBrowserOutgoingVideoStats(this.currentUser.rtcPeer, function(
@@ -775,6 +798,7 @@ class Video extends Model {
         name: participant.name,
         roomName: $this.room.name,
         stats: stats,
+        sent_at: time,
       };
       $this.sendMessage(message);
     });
@@ -792,6 +816,7 @@ class Video extends Model {
         name: participant.name,
         roomName: $this.room.name,
         stats: stats,
+        sent_at: time,
       };
       $this.sendMessage(message);
     });
@@ -1370,7 +1395,9 @@ class Video extends Model {
 
   saveStats(request: any) {
     if (this.currentUser && request.stats) {
-      let stats = {};
+      let stats: any = {};
+      let isScreen = request.name.startsWith('Screen-');
+
       if (request.stats.type == 'browserOutgoingVideoStats') {
         stats = {
           browserOutgoingSsrc: request.stats.ssrc,
@@ -1382,6 +1409,14 @@ class Video extends Model {
           browserOutgoingIceRtt: request.stats.iceRoundTripTime,
           browserOutgoingAvailableBitrate: request.stats.availableBitrate,
         };
+        this.pushToStatsArray(
+          isScreen,
+          isScreen ? screenStats : cameraStats,
+          request.sent_at,
+          {
+            browserBytesSent: stats.browserBytesSent,
+          }
+        );
       } else if (request.stats.type == 'browserIncomingVideoStats') {
         stats = {
           browserIncomingSsrc: request.stats.ssrc,
@@ -1408,6 +1443,14 @@ class Video extends Model {
           kmsFractionLost: request.stats.fractionLost,
           kmsRembSend: request.stats.remb,
         };
+        this.pushToStatsArray(
+          isScreen,
+          isScreen ? screenStats : cameraStats,
+          request.sent_at,
+          {
+            kmsBytesReceived: stats.kmsBytesReceived,
+          }
+        );
       } else if (request.stats.type == 'outboundrtp') {
         stats = {
           kmsOutogingSsrc: request.stats.ssrc,
@@ -1428,6 +1471,14 @@ class Video extends Model {
           fileName: request.stats.fileName,
           fileSize: request.stats.fileSize,
         };
+        this.pushToStatsArray(
+          isScreen,
+          isScreen ? screenStats : cameraStats,
+          request.sent_at,
+          {
+            fileSize: stats.fileSize,
+          }
+        );
       }
       this.emit('stats', {
         stats: stats,
@@ -1435,6 +1486,74 @@ class Video extends Model {
         isScreen: request.name.startsWith('Screen-'),
       });
     }
+  }
+
+  pushToStatsArray(isScreen: boolean, statsArray: any, time: any, value: any) {
+    let index = _.findIndex(statsArray, {
+      at: time,
+    });
+
+    if (index == -1) {
+      statsArray.push({
+        at: time,
+        ...value,
+      });
+    } else {
+      statsArray[index] = {
+        ...statsArray[index],
+        ...value,
+      };
+    }
+    if (statsArray.length > MAX_DATA) {
+      statsArray = statsArray.slice(Math.max(statsArray.length - MAX_DATA, 1));
+      if (isScreen) screenStats = statsArray;
+      else cameraStats = statsArray;
+    }
+  }
+
+  checkConnectivity(emit?: boolean) {
+    let allTrue = 0,
+      allFalse = 0;
+    for (let i = 0; i < MAX_DATA; i++) {
+      cameraConnectivity[i] = cameraStats[i]
+        ? cameraStats[i].browserBytesSent &&
+          cameraStats[i].kmsBytesReceived &&
+          cameraStats[i].fileSize
+          ? true
+          : false
+        : false;
+      screenConnectivity[i] = screenStats[i]
+        ? screenStats[i].browserBytesSent &&
+          screenStats[i].kmsBytesReceived &&
+          screenStats[i].fileSize
+          ? true
+          : false
+        : false;
+      connectivity[i] = cameraConnectivity[i] && screenConnectivity[i];
+      if (connectivity[i]) allTrue++;
+      else allFalse++;
+    }
+    let status = 'disconnected';
+    if (allTrue >= CONNECTIVITY_COUNT) {
+      status = 'connected';
+    } else if (allFalse == MAX_DATA) {
+      if (cameraStats.length != MAX_DATA) {
+        status = 'camera is connecting';
+      } else if (screenStats.length != MAX_DATA) {
+        status = 'screen is connecting';
+      }
+    } else {
+      status = 'weak connection';
+    }
+
+    if (emit)
+      this.emit('connectivity-check', {
+        status: status,
+      });
+
+    return {
+      status: status,
+    };
   }
 }
 
