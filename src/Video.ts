@@ -1417,6 +1417,7 @@ class Video extends Model {
           browserOutgoingIceRtt: request.stats.iceRoundTripTime,
           browserOutgoingAvailableBitrate: request.stats.availableBitrate,
         };
+        /*
         this.pushToStatsArray(
           isScreen,
           isScreen ? screenStats : cameraStats,
@@ -1425,6 +1426,7 @@ class Video extends Model {
             browserBytesSent: stats.browserBytesSent,
           }
         );
+        */
       } else if (request.stats.type == 'browserIncomingVideoStats') {
         stats = {
           browserIncomingSsrc: request.stats.ssrc,
@@ -1451,6 +1453,7 @@ class Video extends Model {
           kmsFractionLost: request.stats.fractionLost,
           kmsRembSend: request.stats.remb,
         };
+        /*
         this.pushToStatsArray(
           isScreen,
           isScreen ? screenStats : cameraStats,
@@ -1458,7 +1461,8 @@ class Video extends Model {
           {
             kmsBytesReceived: stats.kmsBytesReceived,
           }
-        );
+          );
+        */
       } else if (request.stats.type == 'outboundrtp') {
         stats = {
           kmsOutogingSsrc: request.stats.ssrc,
@@ -1513,9 +1517,9 @@ class Video extends Model {
         ...value,
       };
     }
-    if (statsArray.length > this.connectivity_max_length + 1) {
+    if (statsArray.length > this.connectivity_max_length + 2) {
       statsArray = statsArray.slice(
-        Math.max(statsArray.length - (this.connectivity_max_length + 1), 1)
+        Math.max(statsArray.length - (this.connectivity_max_length + 2), 1)
       );
       if (isScreen) screenStats = statsArray;
       else cameraStats = statsArray;
@@ -1525,22 +1529,27 @@ class Video extends Model {
   checkConnectivity(emit?: boolean) {
     let allTrue = 0,
       allFalse = 0;
+
     for (let i = 0; i < this.connectivity_max_length; i++) {
-      cameraConnectivity[i] = cameraStats[i]
-        ? cameraStats[i].browserBytesSent &&
-          cameraStats[i].kmsBytesReceived &&
-          cameraStats[i].fileSize
-          ? true
-          : false
-        : false;
-      screenConnectivity[i] = screenStats[i]
-        ? screenStats[i].browserBytesSent &&
-          screenStats[i].kmsBytesReceived &&
-          screenStats[i].fileSize
-          ? true
-          : false
-        : false;
-      connectivity[i] = cameraConnectivity[i] && screenConnectivity[i];
+      cameraConnectivity[i] =
+        cameraStats[i] &&
+        cameraStats[i].fileSize &&
+        cameraStats[i + 1] &&
+        cameraStats[i + 1].fileSize
+          ? cameraStats[i + 1].fileSize - cameraStats[i].fileSize > 0
+            ? true
+            : false
+          : false;
+      screenConnectivity[i] =
+        screenStats[i] &&
+        screenStats[i].fileSize &&
+        screenStats[i + 1] &&
+        screenStats[i + 1].fileSize
+          ? screenStats[i + 1].fileSize - screenStats[i].fileSize > 0
+            ? true
+            : false
+          : false;
+      connectivity[i] = cameraConnectivity[i] || screenConnectivity[i];
       if (connectivity[i]) allTrue++;
       else allFalse++;
     }
@@ -1548,10 +1557,8 @@ class Video extends Model {
     if (allTrue >= this.connectivity_min_check) {
       status = 'connected';
     } else if (allFalse == this.connectivity_max_length) {
-      if (cameraStats.length != this.connectivity_max_length + 1) {
-        status = 'camera is connecting';
-      } else if (screenStats.length != this.connectivity_max_length + 1) {
-        status = 'screen is connecting';
+      if (cameraStats.length != this.connectivity_max_length + 2) {
+        status = 'connecting';
       }
     } else {
       status = 'weak connection';

@@ -338,11 +338,21 @@ class App extends React.Component<any, any> {
       if (res.status == 'disconnected' && typeof window !== undefined) {
         window.location.reload();
       }
+      if (res.status == 'connected') {
+        for (let i = 0; i < 10; i++) {
+          const res = VideoSDK.checkConnectivity(false);
+          document.getElementById(
+            `connectivity-check-${i + 1}`
+          )?.innerHTML = res.status;
+        }
+      }
+      /*
       res.connectivity.forEach((el: any, index) => {
         document.getElementById(
           `connectivity-check-${index + 1}`
-        )?.innerHTML = el ? 'YES' : 'NO';
+        )?.innerHTML = el;
       });
+      */
     });
 
     VideoSDK.on('rtc-connected', res => {
