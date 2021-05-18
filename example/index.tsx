@@ -334,11 +334,15 @@ class App extends React.Component<any, any> {
       this.parseStats(res);
     });
     VideoSDK.on('connectivity-check', res => {
-      console.log('connectivity-check', res.status);
       document.getElementById('connectivity-check')?.innerHTML = res.status;
       if (res.status == 'disconnected' && typeof window !== undefined) {
         window.location.reload();
       }
+      res.connectivity.forEach((el: any, index) => {
+        document.getElementById(
+          `connectivity-check-${index + 1}`
+        )?.innerHTML = el ? 'YES' : 'NO';
+      });
     });
 
     VideoSDK.on('rtc-connected', res => {
@@ -370,20 +374,25 @@ class App extends React.Component<any, any> {
     // document.getElementById('sample-video').play();
 
     let randomNo = Math.ceil(Math.random() * 5);
-    VideoSDK.connect(`ttg-socket-server-token`, {
-      // url: 'https://176.9.72.40:3000/',
-      url: 'https://localhost/',
-      name: `Suraj${randomNo}_${moment().valueOf()}`,
-      displayName: `Suraj Ahmed ` + randomNo,
-      // name: `Suraj`,
-      roomName: roomName,
-      videoEnabled: true,
-      audioEnabled: false,
-      recording: true,
-      meta: {
-        type: 'opening_interview',
+    VideoSDK.connect(
+      `ttg-socket-server-token`,
+      {
+        // url: 'https://176.9.72.40:3000/',
+        url: 'https://localhost/',
+        name: `Suraj${randomNo}_${moment().valueOf()}`,
+        displayName: `Suraj Ahmed ` + randomNo,
+        // name: `Suraj`,
+        roomName: roomName,
+        videoEnabled: true,
+        audioEnabled: false,
+        recording: true,
+        meta: {
+          type: 'opening_interview',
+        },
       },
-    })
+      10,
+      2
+    )
       .then(async (room: any) => {
         forEach(room.participants, participant => {
           console.log(participant, 'data here');
@@ -806,6 +815,42 @@ class App extends React.Component<any, any> {
             <div>
               <span id="connectivity-check" />
             </div>
+
+            <table className="table table-condensed">
+              <tr>
+                <th>Check 1</th>
+                <th>Check 2</th>
+                <th>Check 3</th>
+                <th>Check 4</th>
+                <th>Check 5</th>
+                <th>Check 6</th>
+                <th>Check 7</th>
+                <th>Check 8</th>
+                <th>Check 9</th>
+                <th>Check 10</th>
+              </tr>
+              <tr>
+                <td id="connectivity-check-1">--</td>
+
+                <td id="connectivity-check-2">--</td>
+
+                <td id="connectivity-check-3">--</td>
+
+                <td id="connectivity-check-4">--</td>
+
+                <td id="connectivity-check-5">--</td>
+
+                <td id="connectivity-check-6">--</td>
+
+                <td id="connectivity-check-7">--</td>
+
+                <td id="connectivity-check-8">--</td>
+
+                <td id="connectivity-check-9">--</td>
+
+                <td id="connectivity-check-10">--</td>
+              </tr>
+            </table>
 
             <div style={{ display: 'flex' }}>
               <div style={{ width: '50%' }}>

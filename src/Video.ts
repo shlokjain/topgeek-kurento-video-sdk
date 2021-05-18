@@ -7,8 +7,8 @@ import Participant from './Participant';
 import { find, forEach, isNil, map } from 'lodash';
 import Model from './Model';
 
-const MAX_DATA = 10,
-  CONNECTIVITY_COUNT = 7;
+const CONNECTIVITY_MAX_LENGTH = 10,
+  CONNECTIVITY_MIN_CHECK = 2;
 const DEFAULT_VIDEO_CONSTRAINT = {
   width: { min: 320, ideal: 640, max: 1280 },
   height: {
@@ -68,6 +68,8 @@ class Video extends Model {
     audioEnabled: boolean;
     meta?: any;
   };
+  connectivity_max_length: number;
+  connectivity_min_check: number;
   private audioInputs: any = [];
   private videoInputs: any = [];
   private audioOutputs: any = [];
@@ -311,9 +313,15 @@ class Video extends Model {
       audioEnabled: boolean;
       recording?: boolean;
       meta?: any;
-    }
+    },
+    connectivity_max_length?: number,
+    connectivity_min_check?: number
   ) {
     this.config = config;
+    this.connectivity_max_length =
+      connectivity_max_length || CONNECTIVITY_MAX_LENGTH;
+    this.connectivity_min_check =
+      connectivity_min_check || CONNECTIVITY_MIN_CHECK;
     socket = socketIOClient(config.url, {
       query: `accessToken=${token}&meta=` + JSON.stringify(config.meta || ''),
     });
@@ -1504,8 +1512,10 @@ class Video extends Model {
         ...value,
       };
     }
-    if (statsArray.length > MAX_DATA) {
-      statsArray = statsArray.slice(Math.max(statsArray.length - MAX_DATA, 1));
+    if (statsArray.length > this.connectivity_max_length + 1) {
+      statsArray = statsArray.slice(
+        Math.max(statsArray.length - (this.connectivity_max_length + 1), 1)
+      );
       if (isScreen) screenStats = statsArray;
       else cameraStats = statsArray;
     }
@@ -1514,7 +1524,7 @@ class Video extends Model {
   checkConnectivity(emit?: boolean) {
     let allTrue = 0,
       allFalse = 0;
-    for (let i = 0; i < MAX_DATA; i++) {
+    for (let i = 0; i < this.connectivity_max_length; i++) {
       cameraConnectivity[i] = cameraStats[i]
         ? cameraStats[i].browserBytesSent &&
           cameraStats[i].kmsBytesReceived &&
@@ -1534,26 +1544,22 @@ class Video extends Model {
       else allFalse++;
     }
     let status = 'disconnected';
-    if (allTrue >= CONNECTIVITY_COUNT) {
+    if (allTrue >= this.connectivity_min_check) {
       status = 'connected';
-    } else if (allFalse == MAX_DATA) {
-      if (cameraStats.length != MAX_DATA) {
+    } else if (allFalse == this.connectivity_max_length) {
+      if (cameraStats.length != this.connectivity_max_length) {
         status = 'camera is connecting';
-      } else if (screenStats.length != MAX_DATA) {
+      } else if (screenStats.length != this.connectivity_max_length) {
         status = 'screen is connecting';
       }
     } else {
       status = 'weak connection';
     }
 
-    if (emit)
-      this.emit('connectivity-check', {
-        status: status,
-      });
+    let message = { status: status, connectivity: connectivity };
+    if (emit) this.emit('connectivity-check', message);
 
-    return {
-      status: status,
-    };
+    return message;
   }
 }
 
