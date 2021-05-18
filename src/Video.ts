@@ -1492,6 +1492,7 @@ class Video extends Model {
         stats: stats,
         type: request.stats.type,
         isScreen: request.name.startsWith('Screen-'),
+        sent_at: request.sent_at,
       });
     }
   }
@@ -1547,9 +1548,9 @@ class Video extends Model {
     if (allTrue >= this.connectivity_min_check) {
       status = 'connected';
     } else if (allFalse == this.connectivity_max_length) {
-      if (cameraStats.length != this.connectivity_max_length) {
+      if (cameraStats.length != this.connectivity_max_length + 1) {
         status = 'camera is connecting';
-      } else if (screenStats.length != this.connectivity_max_length) {
+      } else if (screenStats.length != this.connectivity_max_length + 1) {
         status = 'screen is connecting';
       }
     } else {
