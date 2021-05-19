@@ -19,6 +19,7 @@ const roomName = `room-${Math.ceil(Math.random() * 1)}`;
 
 const VideoSDK = new Video();
 window['video'] = VideoSDK;
+const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 class App extends React.Component<any, any> {
   model: any;
   synth: any;
@@ -341,14 +342,21 @@ class App extends React.Component<any, any> {
       if (res.status == 'disconnected' && typeof window !== undefined) {
         window.location.reload();
       }
-      if (res.status == 'connected') {
-        for (let i = 0; i < 10; i++) {
-          const res = VideoSDK.checkConnectivity(false);
-          document.getElementById(
-            `connectivity-check-${i + 1}`
-          )?.innerHTML = res.status;
-        }
-      }
+      res.connectivity.forEach((el, i) => {
+        document.getElementById(`connectivity-check-${i + 1}`)?.innerHTML = el
+          ? 'YES'
+          : 'NO';
+      });
+      // res.cameraConnectivity.forEach((el, i) => {
+      //   document.getElementById(
+      //     `camera-connectivity-check-${i + 1}`
+      //   )?.innerHTML = el ? 'YES' : 'NO';
+      // });
+      // res.screenConnectivity.forEach((el, i) => {
+      //   document.getElementById(
+      //     `screen-connectivity-check-${i + 1}`
+      //   )?.innerHTML = el ? 'YES' : 'NO';
+      // });
       /*
       res.connectivity.forEach((el: any, index) => {
         document.getElementById(
@@ -403,8 +411,8 @@ class App extends React.Component<any, any> {
           type: 'opening_interview',
         },
       },
-      10,
-      2
+      15,
+      7
     )
       .then(async (room: any) => {
         forEach(room.participants, participant => {
@@ -831,39 +839,40 @@ class App extends React.Component<any, any> {
 
             <table className="table table-condensed">
               <tr>
-                <th>Check 1</th>
-                <th>Check 2</th>
-                <th>Check 3</th>
-                <th>Check 4</th>
-                <th>Check 5</th>
-                <th>Check 6</th>
-                <th>Check 7</th>
-                <th>Check 8</th>
-                <th>Check 9</th>
-                <th>Check 10</th>
+                {arr.map(i => {
+                  return <th>Check {i}</th>;
+                })}
               </tr>
               <tr>
-                <td id="connectivity-check-1">--</td>
-
-                <td id="connectivity-check-2">--</td>
-
-                <td id="connectivity-check-3">--</td>
-
-                <td id="connectivity-check-4">--</td>
-
-                <td id="connectivity-check-5">--</td>
-
-                <td id="connectivity-check-6">--</td>
-
-                <td id="connectivity-check-7">--</td>
-
-                <td id="connectivity-check-8">--</td>
-
-                <td id="connectivity-check-9">--</td>
-
-                <td id="connectivity-check-10">--</td>
+                {arr.map(i => {
+                  return <td id={`connectivity-check-${i}`}>--</td>;
+                })}
               </tr>
             </table>
+            {/* <table className="table table-condensed">
+              <tr>
+                {arr.map(i => {
+                  return <th>Camera Check {i}</th>;
+                })}
+              </tr>
+              <tr>
+                {arr.map(i => {
+                  return <td id={`camera-connectivity-check-${i}`}>--</td>;
+                })}
+              </tr>
+            </table> */}
+            {/* <table className="table table-condensed">
+              <tr>
+                {arr.map(i => {
+                  return <th>Screen Check {i}</th>;
+                })}
+              </tr>
+              <tr>
+                {arr.map(i => {
+                  return <td id={`screen-connectivity-check-${i}`}>--</td>;
+                })}
+              </tr>
+            </table> */}
 
             <div style={{ display: 'flex' }}>
               <div style={{ width: '50%' }}>

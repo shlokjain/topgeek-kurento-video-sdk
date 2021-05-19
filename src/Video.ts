@@ -53,6 +53,8 @@ let connectivity: any = [];
 var socket: any;
 var handle: any;
 
+var isScreenShared: boolean = false;
+
 class Video extends Model {
   socket: any;
   room: Room;
@@ -1276,6 +1278,7 @@ class Video extends Model {
             roomName: this.room.name,
           };
           this.sendMessage(message);
+          isScreenShared = true;
         }
 
         if (!flag) {
@@ -1559,7 +1562,11 @@ class Video extends Model {
             ? true
             : false
           : false;
-      connectivity[i] = cameraConnectivity[i] || screenConnectivity[i];
+      if (isScreenShared && screenStats.length > 0) {
+        connectivity[i] = cameraConnectivity[i] && screenConnectivity[i];
+      } else {
+        connectivity[i] = cameraConnectivity[i];
+      }
       if (connectivity[i]) allTrue++;
       else allFalse++;
     }
@@ -1574,7 +1581,12 @@ class Video extends Model {
       status = 'weak connection';
     }
 
-    let message = { status: status, connectivity: connectivity };
+    let message = {
+      status: status,
+      connectivity: connectivity,
+      screenConnectivity: screenConnectivity,
+      cameraConnectivity: cameraConnectivity,
+    };
     if (emit) this.emit('connectivity-check', message);
 
     return message;
