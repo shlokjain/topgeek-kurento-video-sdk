@@ -1247,6 +1247,7 @@ class Video extends Model {
 
     navigator.mediaDevices['getDisplayMedia'](displayMediaOptions)
       .then((stream: any, data: any) => {
+        let flag = false;
         console.log(stream, data, 'all here');
         if (stream.getVideoTracks()[0] && stream.getVideoTracks()[0].label) {
           if (stream.getVideoTracks()[0].label.startsWith('screen')) {
@@ -1254,24 +1255,18 @@ class Video extends Model {
               'CORRECT Screen share',
               stream.getVideoTracks()[0].label
             );
+            flag = true;
           } else {
             console.log(
               'INCORRECT Screen share',
               stream.getVideoTracks()[0].label
             );
-            stream.getVideoTracks()[0].stop();
-
-            this.emit('incorrect-screenShare', {
-              name: this.currentParticipantName,
-              roomName: this.room.name,
-            });
-            return;
           }
         }
         const participant = this.room.participants.get(
           this.currentParticipantName
         );
-        if (participant) {
+        if (flag && participant) {
           let video_el = this.screenShare; //document.getElementById('share-_video');
           video_el.srcObject = stream;
 
@@ -1282,9 +1277,19 @@ class Video extends Model {
           };
           this.sendMessage(message);
         }
+
+        if (!flag) {
+          if (stream.getVideoTracks()[0]) stream.getVideoTracks()[0].stop();
+          throw new Error('no screenshare');
+        }
       })
       .catch((error: any) => {
         console.log(error);
+        this.emit('incorrect-screenShare', {
+          name: this.currentParticipantName,
+          roomName: this.room.name,
+        });
+        return;
       });
   }
 
