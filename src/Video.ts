@@ -1260,6 +1260,11 @@ class Video extends Model {
               stream.getVideoTracks()[0].label
             );
             stream.getVideoTracks()[0].stop();
+
+            this.emit('incorrect-screenShare', {
+              name: this.currentParticipantName,
+              roomName: this.room.name,
+            });
             return;
           }
         }

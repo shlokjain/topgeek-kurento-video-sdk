@@ -333,6 +333,9 @@ class App extends React.Component<any, any> {
     VideoSDK.on('stats', res => {
       this.parseStats(res);
     });
+    VideoSDK.on('incorrect-screenShare', res => {
+      alert('incorrect-screenShare');
+    });
     VideoSDK.on('connectivity-check', res => {
       document.getElementById('connectivity-check')?.innerHTML = res.status;
       if (res.status == 'disconnected' && typeof window !== undefined) {
