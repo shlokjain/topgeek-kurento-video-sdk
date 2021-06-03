@@ -19,6 +19,9 @@ export default function AudioAnalyser(props: any) {
   const [rafId, setRafId]: any = useState();
 
   useEffect(() => {
+    cancelAnimationFrame(rafId);
+    analyser.disconnect();
+    if (source) source.disconnect();
     setMicLabel(
       props?.VideoSDK?.currentUser?.track?.srcObject?.getAudioTracks()[0]?.label
     );

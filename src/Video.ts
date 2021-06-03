@@ -268,6 +268,7 @@ class Video extends Model {
     console.log(options, 'enabled aud options');
 
     // participant.rtcPeer.dispose();
+    let $this = this;
     //@ts-ignore
     participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
       options,
@@ -289,11 +290,11 @@ class Video extends Model {
         if (!this.config.audioEnabled) {
           participant.rtcPeer.audioEnabled = false;
         }
+        pauseConnectivity = false;
+        $this.emit('participant-changed', {});
       }
     );
-    pauseConnectivity = false;
     console.log(participant.rtcPeer, 'enabled aud rtcPeer');
-    this.emit('participant-changed', {});
   };
 
   stopStream = (participant: any, stream: 'audio' | 'video') => {
