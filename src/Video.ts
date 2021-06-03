@@ -54,6 +54,7 @@ var socket: any;
 var handle: any;
 
 var isScreenShared: boolean = false;
+var pauseConnectivity: boolean = false;
 
 class Video extends Model {
   socket: any;
@@ -145,6 +146,8 @@ class Video extends Model {
       return;
     }
 
+    pauseConnectivity = true;
+
     this.setVideo(false);
     this.setVideo(true);
 
@@ -216,16 +219,16 @@ class Video extends Model {
       // videoStream: video_el.srcObject,
       mediaConstraints: {
         video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
-        audio: true,
+        // audio: true,
         // audio: {
         //   deviceId: {
         //     exact:
         //       '545b3941ae6c6cdc43abd45ad803cb8e324dcc4afc7cef157303ae4004ad7f0e',
         //   },
         // },
-        // audio: {
-        //   deviceId: this.audioSource ? { exact: this.audioSource } : undefined,
-        // },
+        audio: {
+          deviceId: this.audioSource ? { exact: this.audioSource } : undefined,
+        },
         // video: {
         //   deviceId: this.videoSource ? { exact: this.videoSource } : undefined,
         // },
@@ -288,7 +291,9 @@ class Video extends Model {
         }
       }
     );
+    pauseConnectivity = false;
     console.log(participant.rtcPeer, 'enabled aud rtcPeer');
+    this.emit('participant-changed', {});
   };
 
   stopStream = (participant: any, stream: 'audio' | 'video') => {
@@ -393,6 +398,7 @@ class Video extends Model {
                 user: this.currentUser,
                 value: false,
               });
+              isScreenShared = false;
             }
           }
           break;
@@ -1544,24 +1550,26 @@ class Video extends Model {
       allFalse = 0;
 
     for (let i = 0; i < this.connectivity_max_length; i++) {
-      cameraConnectivity[i] =
-        cameraStats[i] &&
-        cameraStats[i].fileSize &&
-        cameraStats[i + 1] &&
-        cameraStats[i + 1].fileSize
-          ? cameraStats[i + 1].fileSize - cameraStats[i].fileSize > 0
-            ? true
-            : false
-          : false;
-      screenConnectivity[i] =
-        screenStats[i] &&
-        screenStats[i].fileSize &&
-        screenStats[i + 1] &&
-        screenStats[i + 1].fileSize
-          ? screenStats[i + 1].fileSize - screenStats[i].fileSize > 0
-            ? true
-            : false
-          : false;
+      cameraConnectivity[i] = pauseConnectivity
+        ? true
+        : cameraStats[i] &&
+          cameraStats[i].fileSize &&
+          cameraStats[i + 1] &&
+          cameraStats[i + 1].fileSize
+        ? cameraStats[i + 1].fileSize - cameraStats[i].fileSize > 0
+          ? true
+          : false
+        : false;
+      screenConnectivity[i] = pauseConnectivity
+        ? true
+        : screenStats[i] &&
+          screenStats[i].fileSize &&
+          screenStats[i + 1] &&
+          screenStats[i + 1].fileSize
+        ? screenStats[i + 1].fileSize - screenStats[i].fileSize > 0
+          ? true
+          : false
+        : false;
       if (isScreenShared && screenStats.length > 0) {
         connectivity[i] = cameraConnectivity[i] && screenConnectivity[i];
       } else {

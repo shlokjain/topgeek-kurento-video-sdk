@@ -23,3 +23,8 @@
   font-weight: 500;
   white-space: pre-wrap;
 }
+
+#saidwords {
+  width: 320px;
+  height: 100px;
+}

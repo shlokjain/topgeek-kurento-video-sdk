@@ -7,6 +7,8 @@ import { forEach, result } from 'lodash';
 import kurentoUtils from 'kurento-utils';
 
 import { TRIANGULATION } from './triangulation';
+import AudioAnalyser from './AudioAnalyser';
+import CurrentMicrophone from './CurrentMicrophone';
 // const App = () => {
 //   return <div>{data}</div>;
 // };
@@ -38,6 +40,27 @@ class App extends React.Component<any, any> {
       isCameraConnected: false,
       isScreenConnected: false,
     };
+
+    this.recognition = new (window.SpeechRecognition ||
+      //@ts-ignore
+      window.webkitSpeechRecognition)();
+    this.recognition.maxAlternatives = 1;
+    this.recognition.continuous = true;
+    this.recognition.start();
+
+    // Detect the said words
+    this.recognition.onresult = e => {
+      var current = e.resultIndex;
+
+      // Get a transcript of what was said.
+      var transcript = e.results[current][0].transcript;
+
+      // Add the current transcript with existing said values
+      var noteContent = document.getElementById('saidwords').value;
+      noteContent += ' ' + transcript;
+      document.getElementById('saidwords').value = noteContent;
+    };
+
     // this.recognition = new webkitSpeechRecognition();
 
     // this.recognition.continuous = true;
@@ -316,8 +339,10 @@ class App extends React.Component<any, any> {
 
   parseStats = res => {
     Object.keys(res.stats).forEach(key => {
-      document.getElementById((res.isScreen ? 'screen-' : '') + key).innerHTML =
-        res.stats[key];
+      if (document.getElementById((res.isScreen ? 'screen-' : '') + key))
+        document.getElementById(
+          (res.isScreen ? 'screen-' : '') + key
+        ).innerHTML = res.stats[key];
     });
   };
 
@@ -331,6 +356,12 @@ class App extends React.Component<any, any> {
       console.log(VideoSDK.getVideoInputDevices(), 'audio output devices @@@');
     });
 
+    VideoSDK.on('participant-changed', res => {
+      console.log(
+        'this.props.participant-changed',
+        VideoSDK?.currentUser?.track?.srcObject?.getAudioTracks()[0]?.label
+      );
+    });
     VideoSDK.on('stats', res => {
       this.parseStats(res);
     });
@@ -405,7 +436,7 @@ class App extends React.Component<any, any> {
         // name: `Suraj`,
         roomName: roomName,
         videoEnabled: true,
-        audioEnabled: false,
+        audioEnabled: true,
         recording: true,
         meta: {
           type: 'opening_interview',
@@ -575,7 +606,6 @@ class App extends React.Component<any, any> {
             >
               Leave room
             </button>
-
             <button
               onClick={() => {
                 console.log(VideoSDK, 'participants here');
@@ -584,7 +614,6 @@ class App extends React.Component<any, any> {
             >
               Share Screen
             </button>
-
             <button
               onClick={() => {
                 console.log(VideoSDK, 'participants here');
@@ -593,7 +622,6 @@ class App extends React.Component<any, any> {
             >
               stop sharing Screen
             </button>
-
             {/* <button
           onClick={() => {
             // this.recognition.start();
@@ -626,12 +654,12 @@ class App extends React.Component<any, any> {
             >
               stop video
             </button>
-
             <button
               onClick={() => {
                 // this.recognition.start();
                 // this.start('video');
                 VideoSDK.setAudio(true);
+                this.recognition.start();
               }}
             >
               start audio
@@ -639,11 +667,11 @@ class App extends React.Component<any, any> {
             <button
               onClick={() => {
                 VideoSDK.setAudio(false);
+                this.recognition.stop();
               }}
             >
               stop audio
             </button>
-
             <button
               onClick={() => {
                 console.log('speech ::: start here', 'participants here');
@@ -667,7 +695,6 @@ class App extends React.Component<any, any> {
             >
               Check Connectivity
             </button>
-
             {/* <Grid templateColumns="repeat(3, 1fr)" mt="5" gap={6}>
           <Box>
             <Text fontSize="xs" mb="1">
@@ -710,7 +737,6 @@ class App extends React.Component<any, any> {
             />
           </Box>
         </Grid> */}
-
             {/* <button
           onClick={() => {
             console.log('speech ::: start here', 'participants here');
@@ -718,8 +744,9 @@ class App extends React.Component<any, any> {
         >
           quickstart
         </button> */}
-
             <div id="participants" />
+            <AudioAnalyser VideoSDK={VideoSDK} />
+            <CurrentMicrophone VideoSDK={VideoSDK} />
             <div className="canvas-wrapper">
               <video
                 id="screen-video"
@@ -731,10 +758,8 @@ class App extends React.Component<any, any> {
               ></video>
             </div>
             <div id="scatter-gl-container"></div>
-
             <div id="subtitle">{this.state.caption}</div>
             {/* <textarea id="maintext" rows={5} cols={50} /> */}
-
             {/* <video
           id="sample-video"
           // autoplay="autoplay"
@@ -742,7 +767,6 @@ class App extends React.Component<any, any> {
           controls
           src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
         ></video> */}
-
             <button
               onClick={() => {
                 // this.recognition.start();
@@ -760,7 +784,6 @@ class App extends React.Component<any, any> {
         >
           change default
         </button> */}
-
             {VideoSDK.getAudioOutputDevices().map(element => {
               return (
                 <button
@@ -773,7 +796,6 @@ class App extends React.Component<any, any> {
                 </button>
               );
             })}
-
             {VideoSDK.getAudioInputDevices().map(element => {
               return (
                 <button
@@ -786,7 +808,6 @@ class App extends React.Component<any, any> {
                 </button>
               );
             })}
-
             {/* <button
           onClick={() => {
             // this.recognition.start();
@@ -808,7 +829,6 @@ class App extends React.Component<any, any> {
               ].deviceId
             : ''}
         </button> */}
-
             {/* <button
           onClick={() => {
             // this.recognition.start();
@@ -832,11 +852,9 @@ class App extends React.Component<any, any> {
                 ? 'Screen is connected'
                 : 'Trying to reconnect Screen'}
             </div>
-
             <div>
               <span id="connectivity-check" />
             </div>
-
             <table className="table table-condensed">
               <tr>
                 {arr.map(i => {
@@ -849,6 +867,9 @@ class App extends React.Component<any, any> {
                 })}
               </tr>
             </table>
+            <br />
+            Said Words -<br />
+            <textarea id="saidwords"></textarea>
             {/* <table className="table table-condensed">
               <tr>
                 {arr.map(i => {
@@ -873,7 +894,6 @@ class App extends React.Component<any, any> {
                 })}
               </tr>
             </table> */}
-
             <div style={{ display: 'flex' }}>
               <div style={{ width: '50%' }}>
                 <h3>Local Camera</h3>
@@ -1019,7 +1039,6 @@ class App extends React.Component<any, any> {
                 </table>
               </div>
             </div>
-
             <div style={{ display: 'flex' }}>
               <div style={{ width: '50%' }}>
                 <h3>Local Screen</h3>
