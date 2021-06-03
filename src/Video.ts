@@ -1590,7 +1590,8 @@ class Video extends Model {
     }
 
     let message = {
-      status: status,
+      status: pauseConnectivity ? 'connecting' : status,
+      pauseConnectivity: pauseConnectivity,
       connectivity: connectivity,
       screenConnectivity: screenConnectivity,
       cameraConnectivity: cameraConnectivity,

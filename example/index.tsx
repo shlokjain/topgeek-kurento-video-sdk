@@ -369,7 +369,8 @@ class App extends React.Component<any, any> {
       alert('incorrect-screenShare');
     });
     VideoSDK.on('connectivity-check', res => {
-      document.getElementById('connectivity-check')?.innerHTML = res.status;
+      document.getElementById('connectivity-check')?.innerHTML =
+        res.status + (res.pauseConnectivity ? ' Paused' : ' Unpaused');
       if (res.status == 'disconnected' && typeof window !== undefined) {
         window.location.reload();
       }
