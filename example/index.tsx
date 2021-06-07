@@ -21,7 +21,11 @@ const roomName = `room-${Math.ceil(Math.random() * 1)}`;
 
 const VideoSDK = new Video();
 window['video'] = VideoSDK;
-const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+const MAX_C = 30;
+const arr: any = [];
+for (let i = 0; i < 30; i++) {
+  arr.push(i + 1);
+}
 class App extends React.Component<any, any> {
   model: any;
   synth: any;
@@ -372,12 +376,12 @@ class App extends React.Component<any, any> {
       document.getElementById('connectivity-check')?.innerHTML =
         res.status + (res.pauseConnectivity ? ' Paused' : ' Unpaused');
       if (res.status == 'disconnected' && typeof window !== undefined) {
-        window.location.reload();
+        // alert('disconnected');
+        // window.location.reload();
       }
       res.connectivity.forEach((el, i) => {
-        document.getElementById(`connectivity-check-${i + 1}`)?.innerHTML = el
-          ? 'YES'
-          : 'NO';
+        document.getElementById(`connectivity-check-${i + 1}`)?.innerHTML =
+          (el ? 'YES' : 'NO') + (' ' + res.cameraFileSize[i]);
       });
       // res.cameraConnectivity.forEach((el, i) => {
       //   document.getElementById(
@@ -411,7 +415,8 @@ class App extends React.Component<any, any> {
     });
     VideoSDK.on('rtc-disconnected', res => {
       if (typeof window !== undefined) {
-        window.location.reload();
+        alert('rtc-disconnected');
+        // window.location.reload();
       }
       if (res.isScreen) {
         this.setState({
@@ -443,7 +448,7 @@ class App extends React.Component<any, any> {
           type: 'opening_interview',
         },
       },
-      15,
+      MAX_C,
       7
     )
       .then(async (room: any) => {

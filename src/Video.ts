@@ -48,6 +48,7 @@ let cameraStats: any = [];
 let screenStats: any = [];
 let cameraConnectivity: any = [];
 let screenConnectivity: any = [];
+let cameraFileSize: any = [];
 let connectivity: any = [];
 
 var socket: any;
@@ -73,6 +74,7 @@ class Video extends Model {
   };
   connectivity_max_length: number;
   connectivity_min_check: number;
+  statsTimeout: number;
   private audioInputs: any = [];
   private videoInputs: any = [];
   private audioOutputs: any = [];
@@ -81,7 +83,7 @@ class Video extends Model {
 
   private selectedAudioOutputDevice: any;
 
-  constructor() {
+  constructor(statsTimeout?: number) {
     //
     super();
     this.screenShare = document.createElement('video');
@@ -89,6 +91,7 @@ class Video extends Model {
     this.screenShare.autoplay = true;
     this.screenShare.controls = false;
     this.screenShare.srcObject = null;
+    this.statsTimeout = statsTimeout || 2000;
 
     navigator.mediaDevices.enumerateDevices().then(devices => {
       for (let i = 0; i !== devices.length; ++i) {
@@ -786,7 +789,7 @@ class Video extends Model {
         }
       );
       $this.checkConnectivity(true);
-    }, 2000);
+    }, this.statsTimeout);
   };
 
   getStats = (participant: any, time: any) => {
@@ -1437,16 +1440,6 @@ class Video extends Model {
           browserOutgoingIceRtt: request.stats.iceRoundTripTime,
           browserOutgoingAvailableBitrate: request.stats.availableBitrate,
         };
-        /*
-        this.pushToStatsArray(
-          isScreen,
-          isScreen ? screenStats : cameraStats,
-          request.sent_at,
-          {
-            browserBytesSent: stats.browserBytesSent,
-          }
-        );
-        */
       } else if (request.stats.type == 'browserIncomingVideoStats') {
         stats = {
           browserIncomingSsrc: request.stats.ssrc,
@@ -1473,16 +1466,6 @@ class Video extends Model {
           kmsFractionLost: request.stats.fractionLost,
           kmsRembSend: request.stats.remb,
         };
-        /*
-        this.pushToStatsArray(
-          isScreen,
-          isScreen ? screenStats : cameraStats,
-          request.sent_at,
-          {
-            kmsBytesReceived: stats.kmsBytesReceived,
-          }
-          );
-        */
       } else if (request.stats.type == 'outboundrtp') {
         stats = {
           kmsOutogingSsrc: request.stats.ssrc,
@@ -1551,6 +1534,7 @@ class Video extends Model {
       allFalse = 0;
 
     for (let i = 0; i < this.connectivity_max_length; i++) {
+      cameraFileSize[i] = cameraStats[i]?.fileSize;
       cameraConnectivity[i] = pauseConnectivity
         ? true
         : cameraStats[i] &&
@@ -1596,6 +1580,7 @@ class Video extends Model {
       connectivity: connectivity,
       screenConnectivity: screenConnectivity,
       cameraConnectivity: cameraConnectivity,
+      cameraFileSize: cameraFileSize,
     };
     if (emit) this.emit('connectivity-check', message);
 
