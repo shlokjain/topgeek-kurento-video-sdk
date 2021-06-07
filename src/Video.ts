@@ -106,7 +106,7 @@ class Video extends Model {
         } else if (deviceInfo.kind === 'videoinput') {
           this.videoInputs.push(deviceInfo);
         } else {
-          console.log('Some other kind of source/device: ', deviceInfo);
+          // console.log('Some other kind of source/device: ', deviceInfo);
         }
       }
 
@@ -137,10 +137,10 @@ class Video extends Model {
     //
     // const participants = this.room.participants;
     // forEach(participants, (participant: Participant) => {
-    //   console.log(participant, 'participant');
+    // console.log(participant, 'participant');
     // });
 
-    console.log();
+    // console.log();
     this.audioSource = device.deviceId;
 
     const participant = this.currentUser;
@@ -188,17 +188,17 @@ class Video extends Model {
     if (this.room) {
       const participants = this.room.participants;
 
-      console.log(participants, 'participants');
-      console.log(device.deviceId, 'device.deviceId');
+      // console.log(participants, 'participants');
+      // console.log(device.deviceId, 'device.deviceId');
       participants.forEach((participant: Participant) => {
-        console.log(participant, device.deviceId, 'participant');
+        // console.log(participant, device.deviceId, 'participant');
         participant.track
           .setSinkId(device.deviceId)
           .then(function() {
-            console.log('hello here');
+            // console.log('hello here');
           })
           .catch((error: any) => {
-            console.log(error, 'error here');
+            // console.log(error, 'error here');
           });
       });
     }
@@ -207,14 +207,14 @@ class Video extends Model {
     // if (element) {
     //   //@ts-ignore
     //   element.setSinkId(deviceId).then(function() {
-    //     console.log('hello here');
+    console.log('hello here');
     //   });
     // }
   };
   startStream = (participant: any) => {
     var video = participant.getVideoElement();
 
-    console.log(this.config.audioEnabled, this.audioSource, 'enabled aud');
+    // console.log(this.config.audioEnabled, this.audioSource, 'enabled aud');
     let video_el = this.screenShare;
 
     var options = {
@@ -268,7 +268,7 @@ class Video extends Model {
         this.currentParticipantName
       ),
     };
-    console.log(options, 'enabled aud options');
+    // console.log(options, 'enabled aud options');
 
     // participant.rtcPeer.dispose();
     let $this = this;
@@ -297,7 +297,7 @@ class Video extends Model {
         $this.emit('participant-changed', {});
       }
     );
-    console.log(participant.rtcPeer, 'enabled aud rtcPeer');
+    // console.log(participant.rtcPeer, 'enabled aud rtcPeer');
   };
 
   stopStream = (participant: any, stream: 'audio' | 'video') => {
@@ -341,19 +341,19 @@ class Video extends Model {
       console.error('Socket Error', data);
     });
     socket.on('event', function(data: any) {
-      console.log('connected on event', data);
+      // console.log('connected on event', data);
     });
 
     socket.on('disconnect', function(data: any) {
-      console.log('disconnected on event', data);
+      // console.log('disconnected on event', data);
       clearInterval(handle);
     });
 
     socket.on('message', (parsedMessage: any) => {
-      if (parsedMessage.id != 'stats') console.log(parsedMessage, 'message');
+      // if (parsedMessage.id != 'stats') console.log(parsedMessage, 'message');
       switch (parsedMessage.id) {
         case 'existingParticipants':
-          console.log(parsedMessage.id, '*****', parsedMessage);
+          // console.log(parsedMessage.id, '*****', parsedMessage);
           this.onExistingParticipants(parsedMessage);
           break;
 
@@ -366,7 +366,7 @@ class Video extends Model {
           // this.onNewScreenShared(parsedMessage);
           break;
         case 'screenShared':
-          console.log(parsedMessage.id, '@@@@', parsedMessage);
+          // console.log(parsedMessage.id, '@@@@', parsedMessage);
           // this.onScreenShared(parsedMessage);
           break;
         case 'screenSharingStarted':
@@ -418,7 +418,7 @@ class Video extends Model {
           break;
         case 'reply':
           this.room.emit('speak', parsedMessage);
-          console.log(parsedMessage, 'reply on event');
+          // console.log(parsedMessage, 'reply on event');
           break;
 
         case 'recordingStarted':
@@ -451,7 +451,7 @@ class Video extends Model {
           {
             // const participant = this.room.participants.get(parsedMessage.name);
             // if (participant) {
-            //   console.log('hello here', parsedMessage.value);
+            // console.log('hello here', parsedMessage.value);
             //   // participant.setVideo(parsedMessage.value);
             //   participant.setVideo(parsedMessage.value);
             //   if (parsedMessage.value) {
@@ -543,7 +543,7 @@ class Video extends Model {
       });
 
       socket.on('disconnect', function(data: any) {
-        console.log('disconnected on event', data);
+        // console.log('disconnected on event', data);
         reject('Disconnected');
       });
     });
@@ -558,7 +558,7 @@ class Video extends Model {
   ) {
     if (error) return console.error('sdp offer error');
 
-    console.log(currentUser, 'participant here');
+    // console.log(currentUser, 'participant here');
 
     var msg = {
       id: 'receiveVideoFrom',
@@ -584,7 +584,7 @@ class Video extends Model {
     candidate: any,
     wp: any
   ) => {
-    console.log('hello here on new sceen 2222');
+    // console.log('hello here on new sceen 2222');
     var message = {
       id: 'onIceCandidate',
       user: currentUser,
@@ -606,7 +606,7 @@ class Video extends Model {
   receiveVideoResponse(result: any) {
     const participant = this.room.participants.get(result.name);
 
-    console.log(result.name, result.sdpAnswer, 'ans wer here');
+    // console.log(result.name, result.sdpAnswer, 'ans wer here');
 
     if (participant) {
       participant.rtcPeer.processAnswer(result.sdpAnswer, function(error: any) {
@@ -626,7 +626,7 @@ class Video extends Model {
   //       onicecandidate: this.onIceCandidate.bind(participant, participant),
   //     };
 
-  //     console.log('hello here on new sceen');
+  // console.log('hello here on new sceen');
   //     //@ts-ignore
   //     participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
   //       options,
@@ -648,8 +648,8 @@ class Video extends Model {
   // }
 
   onNewParticipant(request: any) {
-    console.log('request name new', request.name);
-    console.log('request displayName new', request.displayName);
+    // console.log('request name new', request.name);
+    // console.log('request displayName new', request.displayName);
     this.receiveVideo(request.name, request.displayName);
   }
 
@@ -677,8 +677,8 @@ class Video extends Model {
   }
 
   onExistingParticipants(request: any) {
-    console.log('request name', request.name);
-    console.log('request displayName', request.displayName);
+    // console.log('request name', request.name);
+    // console.log('request displayName', request.displayName);
     var constraints: any = {
       audio: true,
       video: this.config.videoEnabled ? DEFAULT_VIDEO_CONSTRAINT : false,
@@ -687,7 +687,7 @@ class Video extends Model {
     let name = request.name;
     let displayName = request.displayName;
     if (this.room) {
-      console.log('request onExistingParticipants', name, displayName);
+      // console.log('request onExistingParticipants', name, displayName);
 
       var participant = new Participant(name, displayName, this.room);
       var video = participant.getVideoElement();
@@ -719,7 +719,7 @@ class Video extends Model {
         // sendSource: 'desktop',
       };
 
-      console.log('asbhasoptions', options);
+      // console.log('asbhasoptions', options);
       //@ts-ignore
       participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(
         options,
@@ -810,7 +810,7 @@ class Video extends Model {
       stats: any
     ) {
       if (error) {
-        console.log('getBrowserOutgoingVideoStats error', error);
+        // console.log('getBrowserOutgoingVideoStats error', error);
         return;
       }
       const message = {
@@ -828,7 +828,7 @@ class Video extends Model {
       stats: any
     ) {
       if (error) {
-        console.log('getBrowserIncomingVideoStats error', error);
+        // console.log('getBrowserIncomingVideoStats error', error);
         return;
       }
       const message = {
@@ -890,9 +890,9 @@ class Video extends Model {
   }
 
   onPlayOffer = (error: any, offer: any) => {
-    console.log('playe ere');
+    // console.log('playe ere');
     if (error) {
-      console.log(error, 'error here');
+      // console.log(error, 'error here');
       return;
     }
 
@@ -906,19 +906,19 @@ class Video extends Model {
 
     // kurentoClient(args.ws_uri, function(error, client) {
     //   if (error) {
-    //     console.log(error, 'error here');
+    // console.log(error, 'error here');
     //     return;
     //   }
 
     //   client.create('MediaPipeline', function(error, pipeline) {
     //     if (error) {
-    //       console.log(error, 'error here');
+    // console.log(error, 'error here');
     //       return;
     //     }
 
     //     pipeline.create('WebRtcEndpoint', function(error, webRtc) {
     //       if (error) {
-    //         console.log(error, 'error here');
+    // console.log(error, 'error here');
     //         return;
     //       }
 
@@ -949,7 +949,7 @@ class Video extends Model {
 
     //           player.play(function(error) {
     //             if (error) return onError(error);
-    //             console.log('Playing ...');
+    // console.log('Playing ...');
     //           });
     //         });
 
@@ -1139,7 +1139,7 @@ class Video extends Model {
   };
 
   startPlaying = () => {
-    console.log('Start playing');
+    // console.log('Start playing');
 
     var message = {
       id: 'onPlay',
@@ -1157,19 +1157,19 @@ class Video extends Model {
     };
 
     // if (args.ice_servers) {
-    //   console.log("Use ICE servers: " + args.ice_servers);
+    // console.log("Use ICE servers: " + args.ice_servers);
     //   options.configuration = {
     //     iceServers: JSON.parse(args.ice_servers),
     //   };
     // } else {
-    //   console.log("Use freeice");
+    console.log('Use freeice');
     // }
 
     var webRtcPeer = kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(
       options,
       error => {
         if (error) {
-          console.log('Error here: ', error);
+          // console.log('Error here: ', error);
           return;
         }
 
@@ -1229,7 +1229,7 @@ class Video extends Model {
     socket.emit('message', message);
   }
   shareScreen() {
-    console.log('hello here');
+    // console.log('hello here');
     // var audioConstraints = {
     //   audio: false,
     //   video: true,
@@ -1260,19 +1260,19 @@ class Video extends Model {
     navigator.mediaDevices['getDisplayMedia'](displayMediaOptions)
       .then((stream: any, data: any) => {
         let flag = false;
-        console.log(stream, data, 'all here');
+        // console.log(stream, data, 'all here');
         if (stream.getVideoTracks()[0] && stream.getVideoTracks()[0].label) {
           if (stream.getVideoTracks()[0].label.startsWith('screen')) {
-            console.log(
-              'CORRECT Screen share',
-              stream.getVideoTracks()[0].label
-            );
+            // console.log(
+            //   'CORRECT Screen share',
+            //   stream.getVideoTracks()[0].label
+            // );
             flag = true;
           } else {
-            console.log(
-              'INCORRECT Screen share',
-              stream.getVideoTracks()[0].label
-            );
+            // console.log(
+            //   'INCORRECT Screen share',
+            //   stream.getVideoTracks()[0].label
+            // );
           }
         }
         const participant = this.room.participants.get(
@@ -1297,7 +1297,7 @@ class Video extends Model {
         }
       })
       .catch((error: any) => {
-        console.log(error);
+        // console.log(error);
         this.emit('incorrect-screenShare', {
           name: this.currentParticipantName,
           roomName: this.room.name,
@@ -1307,10 +1307,10 @@ class Video extends Model {
   }
 
   receiveVideo = (name: any, displayName: any) => {
-    console.log('request receiveVideo', name, displayName);
+    // console.log('request receiveVideo', name, displayName);
     var participant = new Participant(name, displayName, this.room);
 
-    console.log('receive video', name, this.currentParticipantName);
+    // console.log('receive video', name, this.currentParticipantName);
     if (this.room) {
       var video = participant.getVideoElement();
 
@@ -1362,7 +1362,7 @@ class Video extends Model {
   // setMedia(participant: any, k: any, value: boolean) {
   //   // if (!value) {
 
-  //   console.log(participant.track.srcObject.getTracks(), 'tracks here');
+  // console.log(participant.track.srcObject.getTracks(), 'tracks here');
 
   //   // participant.track.srcObject.getTracks().map((t: any) => {
   //   //   return t.kind == k && t.stop();
