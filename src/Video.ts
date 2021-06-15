@@ -49,7 +49,9 @@ let screenStats: any = [];
 let cameraConnectivity: any = [];
 let screenConnectivity: any = [];
 let cameraFileSize: any = [];
+let screenFileSize: any = [];
 let connectivity: any = [];
+let screenshareDevice: any = null;
 
 var socket: any;
 var handle: any;
@@ -133,6 +135,22 @@ class Video extends Model {
     return this.videoInputs;
   };
 
+  restartUserStream = () => {
+    pauseConnectivity = true;
+    this.setVideo(false);
+    this.setVideo(true);
+    cameraStats = [];
+    pauseConnectivity = false;
+  };
+
+  restartUserScreen = () => {
+    pauseConnectivity = true;
+    this.stopScreenSharingToRestart();
+    this.shareScreen();
+    screenStats = [];
+    pauseConnectivity = false;
+  };
+
   selectAudioInputDevice = (device: any) => {
     //
     // const participants = this.room.participants;
@@ -149,10 +167,7 @@ class Video extends Model {
       return;
     }
 
-    pauseConnectivity = true;
-
-    this.setVideo(false);
-    this.setVideo(true);
+    this.restartUserStream();
 
     // // this.stopStream(participant, 'audio');
     // this.stopStream(participant, 'video');
@@ -293,7 +308,6 @@ class Video extends Model {
         if (!this.config.audioEnabled) {
           participant.rtcPeer.audioEnabled = false;
         }
-        pauseConnectivity = false;
         $this.emit('participant-changed', {});
       }
     );
@@ -403,6 +417,13 @@ class Video extends Model {
                 value: false,
               });
               isScreenShared = false;
+            }
+          }
+          break;
+        case 'screenSharingStoppedToRestart':
+          {
+            if (this.currentUser) {
+              this.currentUser.setScreenSharing(false);
             }
           }
           break;
@@ -663,6 +684,7 @@ class Video extends Model {
           roomName: this.room.name,
         };
         screenTrack[0].onended = () => {
+          isScreenShared = false;
           this.sendMessage(message);
         };
       }
@@ -1225,10 +1247,23 @@ class Video extends Model {
       name: this.currentParticipantName,
       roomName: this.room.name,
     };
+    isScreenShared = false;
 
     socket.emit('message', message);
   }
+  stopScreenSharingToRestart() {
+    var message = {
+      id: 'stopScreenSharingToRestart',
+      name: this.currentParticipantName,
+      roomName: this.room.name,
+    };
+    isScreenShared = false;
+
+    // console.log('ENDED screenshareDevice');
+    socket.emit('message', message);
+  }
   shareScreen() {
+    // console.log('STARTED screenshareDevice');
     // console.log('hello here');
     // var audioConstraints = {
     //   audio: false,
@@ -1257,53 +1292,66 @@ class Video extends Model {
       audio: false,
     };
 
-    navigator.mediaDevices['getDisplayMedia'](displayMediaOptions)
-      .then((stream: any, data: any) => {
-        let flag = false;
-        // console.log(stream, data, 'all here');
-        if (stream.getVideoTracks()[0] && stream.getVideoTracks()[0].label) {
-          if (stream.getVideoTracks()[0].label.startsWith('screen')) {
-            // console.log(
-            //   'CORRECT Screen share',
-            //   stream.getVideoTracks()[0].label
-            // );
-            flag = true;
-          } else {
-            // console.log(
-            //   'INCORRECT Screen share',
-            //   stream.getVideoTracks()[0].label
-            // );
+    if (screenshareDevice) {
+      let video_el = this.screenShare; //document.getElementById('share-_video');
+      video_el.srcObject = screenshareDevice.clone();
+      var message = {
+        id: 'screenShare',
+        name: this.currentParticipantName,
+        roomName: this.room.name,
+      };
+      this.sendMessage(message);
+      isScreenShared = true;
+    } else {
+      navigator.mediaDevices['getDisplayMedia'](displayMediaOptions)
+        .then((stream: any, data: any) => {
+          let flag = false;
+          // console.log(stream, data, 'all here');
+          if (stream.getVideoTracks()[0] && stream.getVideoTracks()[0].label) {
+            if (stream.getVideoTracks()[0].label.startsWith('screen')) {
+              // console.log(
+              //   'CORRECT Screen share',
+              //   stream.getVideoTracks()[0].label
+              // );
+              flag = true;
+              screenshareDevice = stream;
+            } else {
+              // console.log(
+              //   'INCORRECT Screen share',
+              //   stream.getVideoTracks()[0].label
+              // );
+            }
           }
-        }
-        const participant = this.room.participants.get(
-          this.currentParticipantName
-        );
-        if (flag && participant) {
-          let video_el = this.screenShare; //document.getElementById('share-_video');
-          video_el.srcObject = stream;
+          const participant = this.room.participants.get(
+            this.currentParticipantName
+          );
+          if (flag && participant) {
+            let video_el = this.screenShare; //document.getElementById('share-_video');
+            video_el.srcObject = stream;
 
-          var message = {
-            id: 'screenShare',
+            var message = {
+              id: 'screenShare',
+              name: this.currentParticipantName,
+              roomName: this.room.name,
+            };
+            this.sendMessage(message);
+            isScreenShared = true;
+          }
+
+          if (!flag) {
+            if (stream.getVideoTracks()[0]) stream.getVideoTracks()[0].stop();
+            throw new Error('no screenshare');
+          }
+        })
+        .catch((error: any) => {
+          // console.log(error);
+          this.emit('incorrect-screenShare', {
             name: this.currentParticipantName,
             roomName: this.room.name,
-          };
-          this.sendMessage(message);
-          isScreenShared = true;
-        }
-
-        if (!flag) {
-          if (stream.getVideoTracks()[0]) stream.getVideoTracks()[0].stop();
-          throw new Error('no screenshare');
-        }
-      })
-      .catch((error: any) => {
-        // console.log(error);
-        this.emit('incorrect-screenShare', {
-          name: this.currentParticipantName,
-          roomName: this.room.name,
+          });
+          return;
         });
-        return;
-      });
+    }
   }
 
   receiveVideo = (name: any, displayName: any) => {
@@ -1529,12 +1577,31 @@ class Video extends Model {
     }
   }
 
+  getStatus(allTrue: any, allFalse: any, stats: any) {
+    let status = 'disconnected';
+    if (allTrue >= this.connectivity_min_check) {
+      status = 'connected';
+    } else if (allFalse == this.connectivity_max_length) {
+      if (stats.length != this.connectivity_max_length + 2) {
+        status = 'connecting';
+      }
+    } else {
+      status = 'weak connection';
+    }
+    return status;
+  }
+
   checkConnectivity(emit?: boolean) {
     let allTrue = 0,
-      allFalse = 0;
+      allFalse = 0,
+      cAllTrue = 0,
+      cAllFalse = 0,
+      sAllTrue = 0,
+      sAllFalse = 0;
 
     for (let i = 0; i < this.connectivity_max_length; i++) {
       cameraFileSize[i] = cameraStats[i]?.fileSize;
+      screenFileSize[i] = screenStats[i]?.fileSize;
       cameraConnectivity[i] = pauseConnectivity
         ? true
         : cameraStats[i] &&
@@ -1560,27 +1627,36 @@ class Video extends Model {
       } else {
         connectivity[i] = cameraConnectivity[i];
       }
+      if (cameraConnectivity[i]) cAllTrue++;
+      else cAllFalse++;
+      if (screenConnectivity[i]) sAllTrue++;
+      else sAllFalse++;
       if (connectivity[i]) allTrue++;
       else allFalse++;
     }
-    let status = 'disconnected';
-    if (allTrue >= this.connectivity_min_check) {
-      status = 'connected';
-    } else if (allFalse == this.connectivity_max_length) {
-      if (cameraStats.length != this.connectivity_max_length + 2) {
-        status = 'connecting';
-      }
-    } else {
-      status = 'weak connection';
+
+    let status = this.getStatus(allTrue, allFalse, cameraStats);
+    let cameraStatus = this.getStatus(cAllTrue, cAllFalse, cameraStats);
+    let screenStatus = this.getStatus(sAllTrue, sAllFalse, screenStats);
+
+    if (cameraStatus == 'disconnected') {
+      this.restartUserStream();
+    }
+
+    if (isScreenShared && screenshareDevice && screenStatus == 'disconnected') {
+      this.restartUserScreen();
     }
 
     let message = {
       status: pauseConnectivity ? 'connecting' : status,
+      cameraStatus: pauseConnectivity ? 'connecting' : cameraStatus,
+      screenStatus: pauseConnectivity ? 'connecting' : screenStatus,
       pauseConnectivity: pauseConnectivity,
       connectivity: connectivity,
       screenConnectivity: screenConnectivity,
       cameraConnectivity: cameraConnectivity,
       cameraFileSize: cameraFileSize,
+      screenFileSize: screenFileSize,
     };
     if (emit) this.emit('connectivity-check', message);
 
