@@ -817,11 +817,14 @@ class Video extends Model {
         id: 'getBrowserOutgoingVideoStats',
         name: participant.name,
         roomName: $this.room.name,
-        stats: stats,
+        stats: {
+          bytesSent: stats && stats.bytesSent ? stats.bytesSent : 0,
+        },
         sent_at: time,
       };
       $this.sendMessage(message);
     });
+    /*Refactor Stats
     this.getBrowserIncomingVideoStats(participant.rtcPeer, function(
       // this.getBrowserIncomingVideoStats(this.currentUser.rtcPeer, function(
       error: any,
@@ -840,6 +843,7 @@ class Video extends Model {
       };
       $this.sendMessage(message);
     });
+    */
   };
 
   setAudio = (value: boolean) => {
@@ -1429,6 +1433,7 @@ class Video extends Model {
       let stats: any = {};
       let isScreen = request.name.startsWith('Screen-');
 
+      /*Refactor Stats
       if (request.stats.type == 'browserOutgoingVideoStats') {
         stats = {
           browserOutgoingSsrc: request.stats.ssrc,
@@ -1480,6 +1485,18 @@ class Video extends Model {
       } else if (request.stats.type == 'endpoint') {
         stats = {
           e2eLatency: request.stats.videoE2ELatency,
+        };
+      }
+      */
+      if (request.stats.type == 'browserOutgoingVideoStats') {
+        stats = {
+          browserBytesSent: request.stats.bytesSent,
+        };
+      } else if (request.stats.type == 'inboundrtp') {
+        stats = {
+          kmsBytesReceived: request.stats.bytesReceived,
+          kmsJitter: request.stats.jitter,
+          kmsPacketsLost: request.stats.packetsLost,
         };
       } else if (request.stats.type == 'recorderFile') {
         stats = {
