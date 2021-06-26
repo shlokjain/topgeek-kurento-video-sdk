@@ -21,10 +21,9 @@ const roomName = `room-${Math.ceil(Math.random() * 1)}`;
 
 const VideoSDK = new Video();
 window['video'] = VideoSDK;
-const MAX_C = 10,
-  MIN_C = 4;
+const MAX_C = 30;
 const arr: any = [];
-for (let i = 0; i < MAX_C; i++) {
+for (let i = 0; i < 30; i++) {
   arr.push(i + 1);
 }
 class App extends React.Component<any, any> {
@@ -376,18 +375,13 @@ class App extends React.Component<any, any> {
     VideoSDK.on('connectivity-check', res => {
       document.getElementById('connectivity-check')?.innerHTML =
         res.status + (res.pauseConnectivity ? ' Paused' : ' Unpaused');
-      document.getElementById('camera-connectivity-check')?.innerHTML =
-        res.cameraStatus + (res.pauseConnectivity ? ' Paused' : ' Unpaused');
-      document.getElementById('screen-connectivity-check')?.innerHTML =
-        res.screenStatus + (res.pauseConnectivity ? ' Paused' : ' Unpaused');
       if (res.status == 'disconnected' && typeof window !== undefined) {
         // alert('disconnected');
         // window.location.reload();
       }
       res.connectivity.forEach((el, i) => {
         document.getElementById(`connectivity-check-${i + 1}`)?.innerHTML =
-          (el ? 'YES' : 'NO') +
-          (' ' + res.cameraFileSize[i] + ' ' + res.screenFileSize[i]);
+          (el ? 'YES' : 'NO') + (' ' + res.cameraFileSize[i]);
       });
       // res.cameraConnectivity.forEach((el, i) => {
       //   document.getElementById(
@@ -421,7 +415,7 @@ class App extends React.Component<any, any> {
     });
     VideoSDK.on('rtc-disconnected', res => {
       if (typeof window !== undefined) {
-        // alert('rtc-disconnected');
+        alert('rtc-disconnected');
         // window.location.reload();
       }
       if (res.isScreen) {
@@ -448,22 +442,18 @@ class App extends React.Component<any, any> {
         // name: `Suraj`,
         roomName: roomName,
         videoEnabled: true,
-        audioEnabled: false,
+        audioEnabled: true,
         recording: true,
         meta: {
           type: 'opening_interview',
         },
       },
       MAX_C,
-      MIN_C
+      7
     )
       .then(async (room: any) => {
         forEach(room.participants, participant => {
           console.log(participant, 'data here');
-        });
-
-        room.on('isScreenShared', data => {
-          // console.log('isScreenShared screenshareDevice', data);
         });
 
         room.on('participantConnected', async participantConnected => {
@@ -870,12 +860,6 @@ class App extends React.Component<any, any> {
             </div>
             <div>
               <span id="connectivity-check" />
-            </div>
-            <div>
-              <span id="camera-connectivity-check" />
-            </div>
-            <div>
-              <span id="screen-connectivity-check" />
             </div>
             <table className="table table-condensed">
               <tr>
