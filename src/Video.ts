@@ -10,11 +10,11 @@ import Model from './Model';
 const CONNECTIVITY_MAX_LENGTH = 10,
   CONNECTIVITY_MIN_CHECK = 2;
 const DEFAULT_VIDEO_CONSTRAINT = {
-  width: { min: 320, ideal: 640, max: 1280 },
+  width: { min: 320, ideal: 640, max: 640 },
   height: {
     min: 240,
     ideal: 480,
-    max: 720,
+    max: 480,
   },
   frameRate: {
     max: 30,
@@ -91,7 +91,7 @@ class Video extends Model {
     this.screenShare.autoplay = true;
     this.screenShare.controls = false;
     this.screenShare.srcObject = null;
-    this.statsTimeout = statsTimeout || 2000;
+    this.statsTimeout = statsTimeout || 5000;
 
     navigator.mediaDevices.enumerateDevices().then(devices => {
       for (let i = 0; i !== devices.length; ++i) {
