@@ -436,7 +436,7 @@ class App extends React.Component<any, any> {
       `ttg-socket-server-token`,
       {
         // url: 'https://176.9.72.40:3000/',
-        url: 'https://localhost/',
+        url: 'http://localhost:5001',
         name: `Suraj${randomNo}_${moment().valueOf()}`,
         displayName: `Suraj Ahmed ` + randomNo,
         // name: `Suraj`,
@@ -457,6 +457,8 @@ class App extends React.Component<any, any> {
         });
 
         room.on('participantConnected', async participantConnected => {
+          console.log(participantConnected);
+
           let name = participantConnected.name;
           let displayName = participantConnected.displayName;
 

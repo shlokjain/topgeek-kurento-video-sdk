@@ -1289,6 +1289,7 @@ class Video extends Model {
           var message = {
             id: 'screenShare',
             name: this.currentParticipantName,
+            displayName: participant.displayName,
             roomName: this.room.name,
           };
           this.sendMessage(message);
